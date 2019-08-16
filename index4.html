@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>bynario.com</title>
+  <meta name="author" content="psgonza">
+
+  <link href="/rss.xml" type="application/rss+xml" rel="alternate"
+        title="bynario.com RSS Feed" />
+
+
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    <link href="/favicon.png" rel="icon">
+
+  <link href="/theme/css/main.css" media="screen, projection"
+        rel="stylesheet" type="text/css">
+
+  <link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+</head>
+
+<body>
+  <header role="banner"><hgroup>
+  <h1><a href="/"><img src="https://dl.dropboxusercontent.com/u/14814182/blog/bynario_logo.gif"></a></h1>
+</hgroup></header>
+  <nav role="navigation">
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<ul class="main-navigation">
+    <li><a href="/">Home</a></li>
+    <li><a href="/category/posts.html">Posts</a></li>
+    <li><a href="/rss.xml">RSS</a></li>
+</ul></nav>
+  <div id="main">
+    <div id="content">
+<div class="blog-index">
+  		<article>
+<header>
+      <h1 class="entry-title">
+        <a href="/2016-12-20-geolocating-your-holidays.html">Geolocating your holidays</a>
+      </h1>
+    <p class="meta">
+<time datetime="2016-12-20T00:00:00+01:00" pubdate>Tue 20 December 2016</time>    </p>
+</header>
+
+  <div class="entry-content"><p>Hi there</p>
+<p>Tinkering with Python once again... Just for the sake of it :)</p>
+<p>The idea is to generate a web page containing a Google Map with marks of your photo timestamps, geolocated in the map. I'm pretty sure Google Photos is able to do something similar (and better), but where's the fun in that? </p>
+<p>For instance, I spent a few days in Kauai this summer, and this is the resulting map:</p>
+<p>{% img center /img/20-12-2016-geotagging_map.gif 'Kauai photos timestamp' %}</p>
+<p>Each mark is a photo I took, and you can see its timestamp moving the mouse over the marker... </p>
+<p>Nothing fancy, but in case it is useful to you, this is the code:</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19
+ 20
+ 21
+ 22
+ 23
+ 24
+ 25
+ 26
+ 27
+ 28
+ 29
+ 30
+ 31
+ 32
+ 33
+ 34
+ 35
+ 36
+ 37
+ 38
+ 39
+ 40
+ 41
+ 42
+ 43
+ 44
+ 45
+ 46
+ 47
+ 48
+ 49
+ 50
+ 51
+ 52
+ 53
+ 54
+ 55
+ 56
+ 57
+ 58
+ 59
+ 60
+ 61
+ 62
+ 63
+ 64
+ 65
+ 66
+ 67
+ 68
+ 69
+ 70
+ 71
+ 72
+ 73
+ 74
+ 75
+ 76
+ 77
+ 78
+ 79
+ 80
+ 81
+ 82
+ 83
+ 84
+ 85
+ 86
+ 87
+ 88
+ 89
+ 90
+ 91
+ 92
+ 93
+ 94
+ 95
+ 96
+ 97
+ 98
+ 99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Giving a directory as input:</span>
+<span class="sd">1) the script will extract the dates and GPS coordinates of the NEF files</span>
+<span class="sd">2) will add a marker in a Map </span>
+<span class="sd">3) print the HTML file</span>
+
+<span class="sd">Dependencies: </span>
+<span class="sd">- EXIF data has to contain GPS tags</span>
+<span class="sd">- exifread module installed</span>
+<span class="sd">- Google Map API credentials</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">exifread</span><span class="o">,</span><span class="nn">sys</span><span class="o">,</span><span class="nn">glob</span>
+
+<span class="n">G_API_KEY</span> <span class="o">=</span> <span class="s1">&#39;&lt;GOOGLE_MAP_API_TOKEN&gt;&#39;</span>
+
+<span class="n">html</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;&lt;!DOCTYPE html&gt;</span>
+<span class="s2">&lt;html&gt;</span>
+<span class="s2">&lt;head&gt;</span>
+<span class="s2">    &lt;meta name=&quot;viewport&quot; content=&quot;initial-scale=1.0, user-scalable=no&quot;&gt;</span>
+<span class="s2">    &lt;meta charset=&quot;utf-8&quot;&gt;</span>
+<span class="s2">    &lt;title&gt;Complex icons&lt;/title&gt;</span>
+<span class="s2">    &lt;style&gt;</span>
+<span class="s2">      html, body {</span>
+<span class="s2">        height: 100%;</span>
+<span class="s2">        margin: 0;</span>
+<span class="s2">        padding: 0;</span>
+<span class="s2">      }</span>
+<span class="s2">      #map {</span>
+<span class="s2">        height: 100%;</span>
+<span class="s2">      }</span>
+<span class="s2">    &lt;/style&gt;</span>
+<span class="s2">  &lt;/head&gt;</span>
+<span class="s2">  &lt;body&gt;</span>
+<span class="s2">    &lt;div id=&quot;map&quot;&gt;&lt;/div&gt;</span>
+<span class="s2">    &lt;script&gt;</span>
+
+<span class="s2">function initMap() {</span>
+<span class="s2">  var map = new google.maps.Map(document.getElementById(&#39;map&#39;), {</span>
+<span class="s2">    zoom: 10,</span>
+<span class="s2">    center: {lat: xxxLATxxx, lng: xxxLONGxxx}</span>
+<span class="s2">  });</span>
+
+<span class="s2">  setMarkers(map);</span>
+<span class="s2">}  </span>
+
+<span class="s2">xxxCAPTURESxxx</span>
+
+<span class="s2">function setMarkers(map) {</span>
+<span class="s2">  for (var i = 0; i &lt; captures.length; i++) {</span>
+<span class="s2">    var capture = captures[i];</span>
+<span class="s2">    var image = &#39;data:image/svg+xml,%3Csvg</span><span class="si">%20x</span><span class="s2">mlns%3D%22http%3A</span><span class="si">%2F%2F</span><span class="s2">www.w3.org</span><span class="si">%2F</span><span class="s2">2000</span><span class="si">%2F</span><span class="s2">svg</span><span class="si">%22%</span><span class="s2">20width%3D</span><span class="si">%2238%</span><span class="s2">22</span><span class="si">%20he</span><span class="s2">ight%3D</span><span class="si">%2238%</span><span class="s2">22%20viewBox%3D</span><span class="si">%220%</span><span class="s2">200</span><span class="si">%2038%</span><span class="s2">2038</span><span class="si">%22%</span><span class="s2">3E%3Cpath</span><span class="si">%20f</span><span class="s2">ill%3D</span><span class="si">%22%</span><span class="s2">23808080</span><span class="si">%22%</span><span class="s2">20stroke%3D</span><span class="si">%22%</span><span class="s2">23ccc</span><span class="si">%22%</span><span class="s2">20stroke-width%3D</span><span class="si">%22.5%</span><span class="s2">22</span><span class="si">%20d</span><span class="s2">%3D%22M34.305</span><span class="si">%2016.234c</span><span class="s2">0%208.83-15.148%2019.158-15.148%2019.158S3.507</span><span class="si">%2025.065%</span><span class="s2">203.507</span><span class="si">%2016.1c</span><span class="s2">0-8.505%206.894-14.304%2015.4-14.304</span><span class="si">%208.504%</span><span class="s2">200</span><span class="si">%2015.398%</span><span class="s2">205.933</span><span class="si">%2015.398%</span><span class="s2">2014.438z</span><span class="si">%22%</span><span class="s2">2F</span><span class="si">%3E</span><span class="s2">%3Ctext%20transform%3D%22translate</span><span class="si">%2819%</span><span class="s2">2018.5</span><span class="si">%29%</span><span class="s2">22</span><span class="si">%20f</span><span class="s2">ill%3D</span><span class="si">%22%</span><span class="s2">23fff</span><span class="si">%22%</span><span class="s2">20style%3D</span><span class="si">%22f</span><span class="s2">ont-family%3A%20Arial%2C</span><span class="si">%20s</span><span class="s2">ans-serif%3Bfont-weight%3Abold%3Btext-align%3Acenter%3B</span><span class="si">%22%</span><span class="s2">20font-size%3D</span><span class="si">%2212%</span><span class="s2">22%20text-anchor%3D%22middle</span><span class="si">%22%</span><span class="s2">3E&#39; + capture[3] + &#39;%3C</span><span class="si">%2F</span><span class="s2">text</span><span class="si">%3E</span><span class="s2">%3C</span><span class="si">%2F</span><span class="s2">svg</span><span class="si">%3E</span><span class="s2">&#39;;</span>
+<span class="s2">    var marker = new google.maps.Marker({</span>
+<span class="s2">      position: { lat: capture[1], lng: capture[2] },</span>
+<span class="s2">      map: map,</span>
+<span class="s2">      icon: image,</span>
+<span class="s2">      title: capture[0],</span>
+<span class="s2">      zIndex: capture[3]</span>
+<span class="s2">    });</span>
+<span class="s2">  }</span>
+<span class="s2">}</span>
+<span class="s2">    &lt;/script&gt;</span>
+<span class="s2">    &lt;script async defer</span>
+<span class="s2">        src=&quot;https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&amp;signed_in=true&amp;callback=initMap&quot;&gt;&lt;/script&gt;</span>
+<span class="s2">  &lt;/body&gt;</span>
+<span class="s2">&lt;/html&gt; &quot;&quot;&quot;</span> 
+
+<span class="k">def</span> <span class="nf">formatme</span><span class="p">(</span><span class="n">mydata</span><span class="p">,</span><span class="n">reference</span><span class="p">):</span>
+    <span class="n">coordenates</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">mydata</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;[&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;]&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">))</span>
+
+    <span class="n">d</span><span class="o">=</span><span class="n">coordenates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">m</span><span class="o">=</span><span class="n">coordenates</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">s</span><span class="o">=</span><span class="n">coordenates</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">ref</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="n">d</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="s2">&quot;/&quot;</span> <span class="ow">in</span> <span class="n">d</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="s2">&quot;/&quot;</span> <span class="ow">in</span> <span class="n">m</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="s2">&quot;/&quot;</span> <span class="ow">in</span> <span class="n">s</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+    <span class="n">coor</span> <span class="o">=</span> <span class="n">d</span> <span class="o">+</span> <span class="p">(</span><span class="n">m</span> <span class="o">/</span> <span class="mf">60.0</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">s</span> <span class="o">/</span> <span class="mf">3600.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">coor</span> <span class="k">if</span> <span class="n">ref</span> <span class="o">==</span> <span class="s2">&quot;N&quot;</span> <span class="ow">or</span> <span class="n">ref</span> <span class="o">==</span> <span class="s2">&quot;E&quot;</span> <span class="k">else</span> <span class="o">-</span><span class="n">coor</span>
+
+<span class="k">def</span> <span class="nf">find_pics</span><span class="p">(</span><span class="n">pics_path</span><span class="p">):</span>
+    <span class="c1">#Some more logic could be added here</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">pics_path</span> <span class="o">+</span> <span class="s2">&quot;/*.NEF&quot;</span><span class="p">)</span> 
+    <span class="n">files</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">files</span>
+
+<span class="k">def</span> <span class="nf">get_GPS_data</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span><span class="n">path</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1">#Get the EXIF tags</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">tags</span> <span class="o">=</span> <span class="n">exifread</span><span class="o">.</span><span class="n">process_file</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">details</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;skip&quot;</span><span class="p">]</span>
+
+    <span class="c1">#Check we got the GPS tag data</span>
+    <span class="k">if</span> <span class="s2">&quot;GPS GPSLongitude&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tags</span> <span class="ow">and</span> <span class="s2">&quot;GPS GPSLongitudeRef&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;skip&quot;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">path</span><span class="p">,</span><span class="s2">&quot;{0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tags</span><span class="p">[</span><span class="s2">&quot;EXIF DateTimeOriginal&quot;</span><span class="p">]),</span><span class="n">formatme</span><span class="p">(</span><span class="n">tags</span><span class="p">[</span><span class="s2">&quot;GPS GPSLatitude&quot;</span><span class="p">],</span> \
+                <span class="n">tags</span><span class="p">[</span><span class="s2">&quot;GPS GPSLatitudeRef&quot;</span><span class="p">]),</span><span class="n">formatme</span><span class="p">(</span><span class="n">tags</span><span class="p">[</span><span class="s2">&quot;GPS GPSLongitude&quot;</span><span class="p">],</span> <span class="n">tags</span><span class="p">[</span><span class="s2">&quot;GPS GPSLongitudeRef&quot;</span><span class="p">]),</span><span class="nb">id</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">data</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">path</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Usage: &quot;</span> <span class="o">+</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; &lt;path&gt;&quot;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1">#List of pictures to process</span>
+    <span class="n">pics_list</span><span class="o">=</span><span class="n">find_pics</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="c1">#List of pics, dates, lat, long, id</span>
+    <span class="n">captures</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">pic</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pics_list</span><span class="p">):</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">get_GPS_data</span><span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">pic</span><span class="p">)</span> 
+        <span class="k">if</span> <span class="s2">&quot;skip&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span> <span class="n">captures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="c1"># Create the JS code with the list of coordenates</span>
+    <span class="n">html_loop</span> <span class="o">=</span> <span class="s2">&quot;var captures = [&quot;</span>
+    <span class="k">for</span> <span class="n">capture</span> <span class="ow">in</span> <span class="n">captures</span><span class="p">:</span>
+        <span class="n">html_loop</span> <span class="o">=</span> <span class="n">html_loop</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;[&#39;&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">capture</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;&#39;,&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">capture</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">capture</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">+</span> \
+                    <span class="s2">&quot;,&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">capture</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;],</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">html_loop</span> <span class="o">=</span> <span class="n">html_loop</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;]; &quot;</span>
+
+    <span class="c1">#Update center LAT/LONG  coordenates</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;xxxLATxxx&quot;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">captures</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;xxxLONGxxx&quot;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">captures</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">]))</span>
+    <span class="c1">#Update list of points</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;xxxCAPTURESxxx&quot;</span><span class="p">,</span><span class="n">html_loop</span><span class="p">)</span>
+    <span class="c1">#Update API KEY</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;YOUR_API_KEY&quot;</span><span class="p">,</span><span class="n">G_API_KEY</span><span class="p">)</span>
+
+    <span class="k">print</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+</pre></div>
+</td></tr></table>
+
+<p><a href="https://github.com/psgonza/bynario/blob/master/GPS_tags_to_google_map.py">Stored in Github</a></p>
+<p>The script is so simple that I am not even opening a file to write the output... Feel free to do it yourself, or redirect the output to a file:</p>
+<p><code># python extract_geolocation_batch_to_html.py &gt; mymap.htm</code></p>
+<p>Take care out there...</p>
+<p>\\psgonza</p></div>
+  		</article>
+  		<article>
+<header>
+      <h1 class="entry-title">
+        <a href="/2016-12-16-spam-via-google-analytics-update.html">Spam via Google Analytics (update)</a>
+      </h1>
+    <p class="meta">
+<time datetime="2016-12-16T00:00:00+01:00" pubdate>Fri 16 December 2016</time>    </p>
+</header>
+
+  <div class="entry-content"><p>I am not saying Russia has anything to do with the US presidential elections results, but checking Google Analytics, the <a href="https://bynario.com/2016-10-07-spam-via-google-analytics.html">referral spam</a> is kind of "funny"...</p>
+<p>{% img center /img/16122016_spam.JPG 'spam' %}</p>
+<p>And the location:</p>
+<p>{% img center /img/16122016_spam2.JPG 'spam' %}</p>
+<p>Apparently a lot people followed their advice and voted for Trump.</p>
+<p><a href="http://www.nytimes.com/2016/12/15/us/politics/russia-hack-election-trump-obama.html?_r=0">Related</a></p>
+<p>Later</p></div>
+  		</article>
+  		<article>
+<header>
+      <h1 class="entry-title">
+        <a href="/2016-12-14-trying-to-minimize-tracking-in-mobile-platforms.html">Trying to minimize tracking in mobile platforms</a>
+      </h1>
+    <p class="meta">
+<time datetime="2016-12-14T00:00:00+01:00" pubdate>Wed 14 December 2016</time>    </p>
+</header>
+
+  <div class="entry-content"><p>Random thoughts about how to reduce your "big data footprint"</p>
+<p><strong> 1) Social networks </strong></p>
+<p>I have managed to reduce my "wasted" time in social networks to the bare minimum... </p>
+<ul>
+<li>Earlier this year I "quit" G+ (it's a pitty, it had a lot of potential, but it ended up badly)</li>
+<li>I uninstalled FB app from my smartphone months ago, so I use the browser to log in FB (I keep Twitter app installed though)</li>
+<li>I spend just a few minutes in FB/Twitter every day. Pretty low profile for today's standards, I guess. </li>
+</ul>
+<p>But the tracking ads in FB are driving me crazy.</p>
+<p>Quick examples: </p>
+<p>a) I was having a discussion with some friends about portable espresso machines (yes, they do exist), so I googled it and went on with my life. Next time I logged in FB, there it was... Portable espresso machine:</p>
+<p>{% img center /img/photo_2016-12-14_11-38-13.jpg 'ads' %}</p>
+<p>b) Another discussion about smart trackers, another search and 15 minutes later I am seeing promoted posts in Facebook.</p>
+<p>Probably I was using Chrome Browser and Google Search for this, so not only FB is to blame... And don't get me wrong, I don't mind Mark making loads of money sharing (should I say "selling"?) people's info (life?), but just not mine... </p>
+<p>As I said, I already removed Facebook Android application from my phone (and you should probably do the same) and I was using my main browser (Chrome) to log in, but third-party cookies are not helping here... I have decided to use Firefox browser mainly for Facebook. It was already installed in my smartphone, so I simply created a shortcut to the FB url in the "desktop"</p>
+<p>If you are not a heavy FB user, this will do the job... It is better than the FB lite application, and you will be able to isolate your browsing history from your FB session (I'm sorry Mark)</p>
+<p><strong> 2) Google ads + location </strong></p>
+<p>It's not easy to stay away from Google when you are using Android devices... I am a happy <a href="https://www.cyanogenmod.org/blog">CyanogenMod</a> user (both in my OnePlus One and my old Samsung S3) but Google services are the core of the OS, and, truth being told, they tend to make your life easier. It comes with a price, of course: "If You're Not Paying for It, You're the Product"</p>
+<p>There are a lot of information in the Internet about Google services alternatives such as <a href="https://www.leavegooglebehind.com/">leavegooglebehind.com</a> but it is not an easy task (see Bryan's post series in <a href="http://www.networkworld.com/article/2940176/opensource-subnet/kicking-google-out-of-my-life-day-1.html">Networkworld</a>).  I haven't gone that far yet but there are some easy alternatives to Google apps that do the job for me:</p>
+<ul>
+<li>Using different internet browsers such as <a href="https://play.google.com/store/apps/details?id=org.mozilla.firefox&amp;hl=en">Firefox</a> (not "instead of" but together with Chrome)</li>
+<li><a href="https://duckduckgo.com">Duckduckgo</a> as primary search engine (instead of Google Search)</li>
+<li><a href="https://telegram.org/">Telegram</a> as IM client (instead of Hangouts/Allo)</li>
+<li><a href="https://play.google.com/store/apps/details?id=com.diune.pictures&amp;hl=en">Piktures</a> as gallery app (instead of Photos)</li>
+<li><a href="https://www.dropbox.com/">Dropbox</a> as shared storage (instead of Drive)</li>
+</ul>
+<p>Some other applications such as GMail, GMaps, Youtube, GDocs, etc are not so easy to replace, and I wouldn't look for an alternative unless you are really decided to live out of Google's kingdom.</p>
+<p>And one step further: disable GPS, disable WLAN when not connected, remove old SSIDs from your WLAN, disable Google history, and location services... There are many things to do if you are concerned about your privacy. However, being connected 24/7 means there will be a track of your activities/locations somewhere, like it or not.</p>
+<p>Trying to keep the same level of privacy as in 1990's, when people were unable to reach you if you weren't at home, is kind of impossible nowadays. Embrace it or go find a nice cave because you are going to have a hard time in the next 5-10 years. </p>
+<p><a href="https://www.youtube.com/watch?v=Jmg86CRBBtw">Let's be careful out there</a></p>
+<p>//psgonza</p>
+<p>PS: And rest assured that not only companies like Google, FB, Apple, Amazon, etc are willing to track you... Bad guys and goverments have a lot of interest in your digital life as well...</p></div>
+  		</article>
+  		<article>
+<header>
+      <h1 class="entry-title">
+        <a href="/2016-10-07-spam-via-google-analytics.html">Spam via Google Analytics</a>
+      </h1>
+    <p class="meta">
+<time datetime="2016-10-07T00:00:00+02:00" pubdate>Fri 07 October 2016</time>    </p>
+</header>
+
+  <div class="entry-content"><p>I have to give it to them... People are pretty damn creative... Email spam, Whatsapp spam, and why not... <a href="https://en.wikipedia.org/wiki/Referer_spam">Referral spam</a>!</p>
+<p>{% img center /img/spam_via_analytics.JPG 'spam' %}</p>
+<p>People should put all this effort and time in making the world a better place</p></div>
+  		</article>
+  		<article>
+<header>
+      <h1 class="entry-title">
+        <a href="/2016-10-01-minimal-cygwin-python-data-science-installation.html">Minimal Cygwin Python data science installation</a>
+      </h1>
+    <p class="meta">
+<time datetime="2016-10-01T00:00:00+02:00" pubdate>Sat 01 October 2016</time>    </p>
+</header>
+
+  <div class="entry-content"><p>A few days ago a made a fresh installation of Cygwin64 in order to tinker with <a href="http://pandas.pydata.org/">Pandas</a> (just for fun) but instead of installing <a href="https://www.continuum.io/anaconda-subscriptions/anaconda">Anaconda</a>, I decided to install each component manually... I will write it here because I'm sure I will need it in the future (and it might be handy for someone else). </p>
+<p>First things first, package management in Cygwin is a bit of a pain without <a href="https://github.com/transcode-open/apt-cyg">apt-cyg</a>... So download it from <a href="https://raw.githubusercontent.com/transcode-open/apt-cyg/master/apt-cyg">here</a>, save it as "apt-cyg" in your $HOME and install it: </p>
+<div class="highlight"><pre><span></span><span class="n">install</span> <span class="n">apt</span><span class="o">-</span><span class="n">cyg</span> <span class="o">/</span><span class="n">bin</span><span class="o">/</span>
+</pre></div></div>
+  		</article>
+<div class="pagination">
+    <a class="prev" href="/index5.html">&larr; Older</a>
+
+    <a class="next" href="/index3.html">Newer &rarr;</a>
+  <br />
+</div></div>
+<aside class="sidebar">
+  <section>
+	  <img src="https://dl.dropboxusercontent.com/u/14814182/blog/roundPic.gif" alt="" width=""/> 
+  </section>
+  <section>
+    <h1>Recent Posts</h1>
+    <ul id="recent_posts">
+      <li class="post">
+          <a href="/2018-05-15-batch-macos-convert-resize-nef-to-jpg.html">NEF batch processing in MacOS (from CLI)</a>
+      </li>
+      <li class="post">
+          <a href="/2018-02-17-psa_minikeepass_and_key_files.html">PSA: MiniKeePass and key files</a>
+      </li>
+      <li class="post">
+          <a href="/2017-12-31-bye-bye-2017_hello-2018.html">Bye bye 2017, hello 2018</a>
+      </li>
+      <li class="post">
+          <a href="/2017-08-25-string-manipulation-exercise-perl-python-awk.html">String manipulation exercise: Perl, Python, Awk</a>
+      </li>
+      <li class="post">
+          <a href="/2017-06-05-issues-running-gpg-in-a-container.html">Issues running gpg in a container</a>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+  <h1>Tags</h1>
+    <a href="/tag/pelican.html">pelican</a>,    <a href="/tag/google.html">google</a>,    <a href="/tag/data-science.html">data science</a>,    <a href="/tag/telegram.html">telegram</a>,    <a href="/tag/coding.html">coding</a>,    <a href="/tag/blogging.html">blogging</a>,    <a href="/tag/books.html">books</a>,    <a href="/tag/linux.html">linux</a>,    <a href="/tag/images.html">images</a>,    <a href="/tag/technology.html">technology</a>,    <a href="/tag/bynario.html">bynario</a>,    <a href="/tag/spotify.html">spotify</a>,    <a href="/tag/git.html">Git</a>,    <a href="/tag/networking.html">networking</a>,    <a href="/tag/ads.html">ads</a>,    <a href="/tag/quickthoughts.html">quickthoughts</a>,    <a href="/tag/spam.html">spam</a>,    <a href="/tag/tv.html">tv</a>,    <a href="/tag/octopress.html">octopress</a>,    <a href="/tag/psgonza.html">psgonza</a>,    <a href="/tag/synology.html">synology</a>,    <a href="/tag/perl.html">perl</a>,    <a href="/tag/nas.html">nas</a>,    <a href="/tag/internet.html">internet</a>,    <a href="/tag/interview.html">interview</a>,    <a href="/tag/2014.html">2014</a>,    <a href="/tag/2017.html">2017</a>,    <a href="/tag/2016.html">2016</a>,    <a href="/tag/iptables.html">iptables</a>,    <a href="/tag/kubernetes.html">kubernetes</a>,    <a href="/tag/python.html">python</a>,    <a href="/tag/ntp.html">ntp</a>,    <a href="/tag/2015.html">2015</a>,    <a href="/tag/keepass.html">keepass</a>,    <a href="/tag/photos.html">photos</a>,    <a href="/tag/ssmtp.html">ssmtp</a>,    <a href="/tag/awk.html">awk</a>,    <a href="/tag/cygwin.html">cygwin</a>,    <a href="/tag/meetups.html">meetups</a>,    <a href="/tag/scripts.html">scripts</a>,    <a href="/tag/ipython.html">ipython</a>,    <a href="/tag/monitoring.html">monitoring</a>,    <a href="/tag/security.html">security</a>,    <a href="/tag/bash.html">bash</a>,    <a href="/tag/rss.html">rss</a>,    <a href="/tag/macos.html">macos</a>,    <a href="/tag/tips.html">tips</a>,    <a href="/tag/geotagging.html">geotagging</a>,    <a href="/tag/ssl.html">ssl</a>,    <a href="/tag/windows.html">windows</a>,    <a href="/tag/blogs.html">blogs</a>,    <a href="/tag/privacy.html">privacy</a>,    <a href="/tag/programming.html">programming</a>,    <a href="/tag/cli.html">cli</a>,    <a href="/tag/podcasts.html">podcasts</a>,    <a href="/tag/ansible.html">ansible</a>,    <a href="/tag/opinion.html">opinion</a>,    <a href="/tag/docker.html">docker</a>,    <a href="/tag/note2self.html">note2self</a>,    <a href="/tag/scripting.html">scripting</a>  </section>
+
+
+
+  <section>
+    <h1>GitHub Repos</h1>
+    <ul id="gh_repos">
+      <p><a href="https://github.com/psgonza">@psgonza</a></p>
+    </ul>
+    <script type="text/javascript">
+      $.domReady(function(){
+          if (!window.jXHR){
+              var jxhr = document.createElement('script');
+              jxhr.type = 'text/javascript';
+              jxhr.src = '/theme/js/jXHR.js';
+              var s = document.getElementsByTagName('script')[0];
+              s.parentNode.insertBefore(jxhr, s);
+          }
+
+          github.showRepos({
+              user: 'psgonza',
+              count: 5,
+              skip_forks: false,
+              target: '#gh_repos'
+          });
+      });
+    </script>
+    <script src="/theme/js/github.js" type="text/javascript"> </script>
+  </section>
+
+    <section>
+        <h1>Social</h1>
+        <ul>
+            <li><a href="/rss.xml" type="application/rss+xml" rel="alternate">RSS</a></li>
+            <li><a href="#" target="_blank">You can add links in your config file</a></li>
+            <li><a href="#" target="_blank">Another social link</a></li>
+        </ul>
+    </section>
+    <section>
+        <h1>Blogroll</h1>
+        <ul>
+            <li><a href="http://getpelican.com/" target="_blank">Pelican</a></li>
+            <li><a href="http://python.org/" target="_blank">Python.org</a></li>
+            <li><a href="http://jinja.pocoo.org/" target="_blank">Jinja2</a></li>
+            <li><a href="#" target="_blank">You can modify those links in your config file</a></li>
+        </ul>
+    </section>
+
+<section>
+   <h1>Tweeter</h1>
+    <p>Follow <a href="http://twitter.com/psgonza">@psgonza</a></p>
+</section>
+</aside>    </div>
+  </div>
+  <footer role="contentinfo"><p>
+    Copyright &copy;  2011&ndash;2018  psgonza &mdash;
+  <span class="credit">Powered by <a href="http://getpelican.com">Pelican</a></span>
+</p></footer>
+  <script src="/theme/js/modernizr-2.0.js"></script>
+  <script src="/theme/js/ender.js"></script>
+  <script src="/theme/js/octopress.js" type="text/javascript"></script>
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-90925-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-90925-1');
+    ga('send', 'pageview');
+</script>
+  <script type="text/javascript">
+    var disqus_shortname = 'bynario';
+    (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = "//" + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+  </script>
+</body>
+</html>

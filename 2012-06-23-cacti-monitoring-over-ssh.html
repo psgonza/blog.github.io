@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Cacti monitoring over SSH &mdash; bynario.com</title>
+  <meta name="author" content="psgonza">
+
+  <link href="/rss.xml" type="application/rss+xml" rel="alternate"
+        title="bynario.com RSS Feed" />
+
+
+
+
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    <link href="/favicon.png" rel="icon">
+
+  <link href="/theme/css/main.css" media="screen, projection"
+        rel="stylesheet" type="text/css">
+
+  <link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+</head>
+
+<body>
+  <header role="banner"><hgroup>
+  <h1><a href="/"><img src="https://dl.dropboxusercontent.com/u/14814182/blog/bynario_logo.gif"></a></h1>
+</hgroup></header>
+  <nav role="navigation">
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<ul class="main-navigation">
+    <li><a href="/">Home</a></li>
+    <li><a href="/category/posts.html">Posts</a></li>
+    <li><a href="/rss.xml">RSS</a></li>
+</ul></nav>
+  <div id="main">
+    <div id="content">
+<div>
+  <article class="hentry" role="article">
+<header>
+      <h1 class="entry-title">Cacti monitoring over SSH</h1>
+    <p class="meta">
+<time datetime="2012-06-23T09:26:00+02:00" pubdate>Sat 23 June 2012</time>    </p>
+</header>
+
+  <div class="entry-content"><p>Recently I had to configure <a href="http://www.cacti.net/">Cacti</a> in order to monitor several blades in a cluster (nothing fancy, just CPU load, memory usage, load average and disk space) but this time NET-SNMP wasn't an option. I knew that I could use server scripts to access the remote blades using SSH, so after googling a while, I found this proejct from the Percona guys:</p>
+<p><a href="http://www.percona.com/doc/percona-monitoring-plugins/cacti/">Percona Monitoring Plugins for Cacti</a></p>
+<p>What can I say... Amazing. Everything working in a few minutes.</p>
+<p>Although all the information about Cacti and Percona plugins can be found in their web sites, I decided to put it all together and take a few screenshots, so if you happen to do something similar, this is what I did:</p>
+<p>Let's assume that you have a fresh a Debian box (In my case, I created a Debian virtual machine, running testing for this) </p>
+<p>1) Install cacti (and its dependences) using aptitude </p>
+<div class="highlight"><pre><span></span><span class="n">aptitude</span> <span class="n">install</span> <span class="n">cacti</span>
+<span class="n">The</span> <span class="n">following</span> <span class="k">NEW</span> <span class="n">packages</span> <span class="n">will</span> <span class="n">be</span> <span class="n">installed</span><span class="p">:</span>
+  <span class="n">apache2</span><span class="o">-</span><span class="n">mpm</span><span class="o">-</span><span class="n">prefork</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">apache2</span><span class="o">-</span><span class="n">utils</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">apache2</span><span class="p">.</span><span class="mi">2</span><span class="o">-</span><span class="n">bin</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+  <span class="n">apache2</span><span class="p">.</span><span class="mi">2</span><span class="o">-</span><span class="n">common</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">cacti</span> <span class="n">dbconfig</span><span class="o">-</span><span class="n">common</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libaio1</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+  <span class="n">libapache2</span><span class="o">-</span><span class="k">mod</span><span class="o">-</span><span class="n">php5</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libaprutil1</span><span class="o">-</span><span class="n">ldap</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libcairo2</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libdatrie1</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+  <span class="n">libdbd</span><span class="o">-</span><span class="n">mysql</span><span class="o">-</span><span class="n">perl</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libdbi</span><span class="o">-</span><span class="n">perl</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libdbi0</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libfontenc1</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+  <span class="n">libhtml</span><span class="o">-</span><span class="k">template</span><span class="o">-</span><span class="n">perl</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libmysqlclient16</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libnet</span><span class="o">-</span><span class="n">daemon</span><span class="o">-</span><span class="n">perl</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+  <span class="n">libonig2</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libpango1</span><span class="p">.</span><span class="mi">0</span><span class="o">-</span><span class="mi">0</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libpango1</span><span class="p">.</span><span class="mi">0</span><span class="o">-</span><span class="n">common</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libphp</span><span class="o">-</span><span class="n">adodb</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+  <span class="n">libpixman</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="mi">0</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libplrpc</span><span class="o">-</span><span class="n">perl</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libpng12</span><span class="o">-</span><span class="mi">0</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libqdbm14</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">librrd4</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+  <span class="n">libthai</span><span class="o">-</span><span class="k">data</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libthai0</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libx11</span><span class="o">-</span><span class="mi">6</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libx11</span><span class="o">-</span><span class="k">data</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libxau6</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+  <span class="n">libxcb</span><span class="o">-</span><span class="n">render</span><span class="o">-</span><span class="n">util0</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libxcb</span><span class="o">-</span><span class="n">render0</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libxcb1</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libxdmcp6</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+  <span class="n">libxfont1</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libxft2</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">libxrender1</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">mysql</span><span class="o">-</span><span class="n">client</span><span class="o">-</span><span class="mi">5</span><span class="p">.</span><span class="mi">1</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+  <span class="n">mysql</span><span class="o">-</span><span class="n">client</span><span class="o">-</span><span class="mi">5</span><span class="p">.</span><span class="mi">5</span><span class="err">{</span><span class="n">ab</span><span class="err">}</span> <span class="n">mysql</span><span class="o">-</span><span class="n">common</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">mysql</span><span class="o">-</span><span class="n">server</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">mysql</span><span class="o">-</span><span class="n">server</span><span class="o">-</span><span class="mi">5</span><span class="p">.</span><span class="mi">5</span><span class="err">{</span><span class="n">ab</span><span class="err">}</span>
+  <span class="n">mysql</span><span class="o">-</span><span class="n">server</span><span class="o">-</span><span class="n">core</span><span class="o">-</span><span class="mi">5</span><span class="p">.</span><span class="mi">5</span><span class="err">{</span><span class="n">ab</span><span class="err">}</span> <span class="n">php5</span><span class="o">-</span><span class="n">cli</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">php5</span><span class="o">-</span><span class="n">common</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">php5</span><span class="o">-</span><span class="n">mysql</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+  <span class="n">php5</span><span class="o">-</span><span class="n">snmp</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">php5</span><span class="o">-</span><span class="n">suhosin</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">rrdtool</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">x</span><span class="o">-</span><span class="n">ttcidfont</span><span class="o">-</span><span class="n">conf</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">x11</span><span class="o">-</span><span class="n">common</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+  <span class="n">xfonts</span><span class="o">-</span><span class="n">encodings</span><span class="err">{</span><span class="n">a</span><span class="err">}</span> <span class="n">xfonts</span><span class="o">-</span><span class="n">utils</span><span class="err">{</span><span class="n">a</span><span class="err">}</span>
+</pre></div>
+
+
+<p>2) Setup your timezone in php.ini</p>
+<p>There are three different "php.ini" files in Debian:</p>
+<div class="highlight"><pre><span></span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">php5</span><span class="o">/</span><span class="n">cli</span><span class="o">/</span><span class="n">php</span><span class="p">.</span><span class="n">ini</span>
+<span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">php5</span><span class="o">/</span><span class="n">apache2</span><span class="o">/</span><span class="n">php</span><span class="p">.</span><span class="n">ini</span>
+<span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">php</span><span class="p">.</span><span class="n">ini</span>
+</pre></div>
+
+
+<p>Cacti is using PHP over the CLI, so it should be enough if you update "/etc/php5/cli/php.ini", but I would update all of them. Add this line to the file:</p>
+<div class="highlight"><pre><span></span><span class="nb">date</span><span class="p">.</span><span class="n">timezone</span> <span class="o">=</span> <span class="ss">&quot;&lt;time zone&gt;&quot;</span> 
+</pre></div>
+
+
+<p>For example: </p>
+<div class="highlight"><pre><span></span><span class="nb">date</span><span class="p">.</span><span class="n">timezone</span> <span class="o">=</span> <span class="ss">&quot;Asia/Tokyo&quot;</span>
+</pre></div>
+
+
+<p>The list of timezones is available <a href="http://www.php.net/manual/en/timezones.php">here</a></p>
+<p>3) Apache+MySQL+PHP+Cacti working out of the box with just a few commands</p>
+<p>At this point you should be able to login in cacti on your apache webserver (http://VM_IP/cacti) </p>
+<p>The default user/password is admin/admin. (the system will ask you to change it after the first login)  </p>
+<p>I won't explain Cacti configuration, because they already have very good documentation in their <a href="http://www.cacti.net/documentation.php">web site</a></p>
+<p>4) Setting up the SSH authentication</p>
+<p>This chapter is pretty well explained in Percona web site. </p>
+<p>Basically we have to: <br>
+- Set up an SSH keypair for SSH authentication. <br>
+- Create a user on the remote server you want to graph.<br>
+- Install the public key into that user.s authorized_keys file.   </p>
+<p>Check the detailed information here <a href="http://www.percona.com/doc/percona-monitoring-plugins/cacti/ssh-based-templates.html#installing-ssh-based-templates">Percona: SSH-Based Templates</a></p>
+<p>5) Installing "Percona Monitoring Plugins for Cacti"     </p>
+<p>Download the plugins from Percona website: <a href="http://www.percona.com/downloads/percona-monitoring-plugins/">Percona - Download percona-monitoring-plugins</a></p>
+<div class="highlight"><pre><span></span><span class="n">wget</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="p">.</span><span class="n">percona</span><span class="p">.</span><span class="n">com</span><span class="o">/</span><span class="n">redir</span><span class="o">/</span><span class="n">downloads</span><span class="o">/</span><span class="n">percona</span><span class="o">-</span><span class="n">monitoring</span><span class="o">-</span><span class="n">plugins</span><span class="o">/</span><span class="n">percona</span><span class="o">-</span><span class="n">monitoring</span><span class="o">-</span><span class="n">plugins</span><span class="o">-</span><span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="p">.</span><span class="n">tar</span><span class="p">.</span><span class="n">gz</span>
+</pre></div>
+
+
+<p>Extract the file, and copy ss_get_by_ssh.php to Cacti script folder:</p>
+<div class="highlight"><pre><span></span><span class="n">tar</span> <span class="n">zxvf</span> <span class="n">percona</span><span class="o">-</span><span class="n">monitoring</span><span class="o">-</span><span class="n">plugins</span><span class="o">-</span><span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="p">.</span><span class="n">tar</span><span class="p">.</span><span class="n">gz</span>
+<span class="n">cp</span> <span class="n">percona</span><span class="o">-</span><span class="n">monitoring</span><span class="o">-</span><span class="n">plugins</span><span class="o">-</span><span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="o">/</span><span class="n">cacti</span><span class="o">/</span><span class="n">scripts</span><span class="o">/</span><span class="n">ss_get_by_ssh</span><span class="p">.</span><span class="n">php</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="k">share</span><span class="o">/</span><span class="n">cacti</span><span class="o">/</span><span class="n">site</span><span class="o">/</span><span class="n">scripts</span><span class="o">/</span>
+</pre></div>
+
+
+<p>Edit /usr/share/cacti/site/scripts/ss_get_by_ssh.php with your remote user name and the path to the SSH identity from step 4.</p>
+<div class="highlight"><pre><span></span><span class="err">$</span><span class="n">ssh_user</span>   <span class="o">=</span> <span class="s1">&#39;cacti&#39;</span><span class="p">;</span>                          <span class="o">#</span> <span class="n">SSH</span> <span class="n">username</span>
+<span class="err">$</span><span class="n">ssh_iden</span>   <span class="o">=</span> <span class="s1">&#39;-i /var/www/cacti/.ssh/id_rsa&#39;</span><span class="p">;</span>  <span class="o">#</span> <span class="n">SSH</span> <span class="k">identity</span>
+</pre></div>
+
+
+<p>6) Importing the template</p>
+<p>Inside the tar file you will find different templates:</p>
+<div class="highlight"><pre><span></span><span class="o">/</span><span class="n">percona</span><span class="o">-</span><span class="n">monitoring</span><span class="o">-</span><span class="n">plugins</span><span class="o">-</span><span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="o">/</span><span class="n">cacti</span><span class="o">/</span><span class="n">templates</span><span class="o">#</span> <span class="n">ls</span> <span class="o">-</span><span class="n">lrt</span>
+<span class="n">total</span> <span class="mi">1644</span>
+<span class="o">-</span><span class="n">rw</span><span class="o">-</span><span class="n">r</span><span class="c1">--r-- 1 501 root 169078 Jun 15 04:44 cacti_host_template_percona_openvz_server_ht_0.8.6i-sver1.0.1.xml</span>
+<span class="o">-</span><span class="n">rw</span><span class="o">-</span><span class="n">r</span><span class="c1">--r-- 1 501 root  41926 Jun 15 04:44 cacti_host_template_percona_nginx_server_ht_0.8.6i-sver1.0.1.xml</span>
+<span class="o">-</span><span class="n">rw</span><span class="o">-</span><span class="n">r</span><span class="c1">--r-- 1 501 root 843345 Jun 15 04:44 cacti_host_template_percona_mysql_server_ht_0.8.6i-sver1.0.1.xml</span>
+<span class="o">-</span><span class="n">rw</span><span class="o">-</span><span class="n">r</span><span class="c1">--r-- 1 501 root  89553 Jun 15 04:44 cacti_host_template_percona_mongodb_server_ht_0.8.6i-sver1.0.1.xml</span>
+<span class="o">-</span><span class="n">rw</span><span class="o">-</span><span class="n">r</span><span class="c1">--r-- 1 501 root  75491 Jun 15 04:44 cacti_host_template_percona_memcached_server_ht_0.8.6i-sver1.0.1.xml</span>
+<span class="o">-</span><span class="n">rw</span><span class="o">-</span><span class="n">r</span><span class="c1">--r-- 1 501 root  53416 Jun 15 04:44 cacti_host_template_percona_jmx_server_ht_0.8.6i-sver1.0.1.xml</span>
+<span class="o">-</span><span class="n">rw</span><span class="o">-</span><span class="n">r</span><span class="c1">--r-- 1 501 root 249175 Jun 15 04:44 cacti_host_template_percona_gnu_linux_server_ht_0.8.6i-sver1.0.1.xml</span>
+<span class="o">-</span><span class="n">rw</span><span class="o">-</span><span class="n">r</span><span class="c1">--r-- 1 501 root  73879 Jun 15 04:44 cacti_host_template_percona_apache_server_ht_0.8.6i-sver1.0.1.xml</span>
+<span class="o">-</span><span class="n">rw</span><span class="o">-</span><span class="n">r</span><span class="c1">--r-- 1 501 root  37198 Jun 15 04:44 cacti_host_template_percona_redis_server_ht_0.8.6i-sver1.0.1.xml</span>
+</pre></div>
+
+
+<p>In our case, we are only interested in <strong>cacti_host_template_percona_gnu_linux_server_ht_0.8.6i-sver1.0.1.xml</strong></p>
+<p>Console -&gt; Import Templates -&gt; Import template:     </p>
+<p>7) Create a new device</p>
+<p>Under Console -&gt; Devices, add a new device:</p>
+<p>And complete the information (name, IP)</p>
+<p>8) Modify the data template and the data source (I will use "Percona Disk Space DT" as example)</p>
+<p>Check the Percona Data Templates availables:</p>
+<p>Console -&gt; Data Templates</p>
+<p>Click in the name (Percona Disk Space DT) and let's edit the template. Go to the bottom of the page, and check "Custom Data":</p>
+<p>Add Percona Disk Space DT as new data source for your host. Under Console -&gt; Data Sources, click new:</p>
+<p>Set the Remote IP and the partition (or volumen) to monitor</p>
+<p>9) Create the graph</p>
+<p>We have already created the data source for our remote server, so now, we just have to create a new graph.</p>
+<p>Under Console -&gt; Graph Management, add a new graph:</p>
+<p>And select our data source (Percona Disk Space DT) for the device:</p>
+<p>10) Result</p>
+<p>At this point, the graph should be created, and after a few minutes, you should see something like this:</p>
+<p>If something goes wrong, take a look at /var/log/cacti/cacti.log. There should be a line similar to this one:</p>
+<div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="nv">DATE</span><span class="o">&gt;</span> <span class="o">-</span> <span class="nv">CMDPHP</span><span class="s s-Atom">:</span> <span class="nv">Poller</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="nv">Host</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="nv">DS</span><span class="p">[</span><span class="mi">25</span><span class="p">]</span> <span class="nv">CMD</span><span class="s s-Atom">:</span> <span class="o">/</span><span class="s s-Atom">usr</span><span class="o">/</span><span class="s s-Atom">bin</span><span class="o">/</span><span class="s s-Atom">php</span> <span class="o">-</span><span class="s s-Atom">q</span> <span class="o">/</span><span class="s s-Atom">usr</span><span class="o">/</span><span class="s s-Atom">share</span><span class="o">/</span><span class="s s-Atom">cacti</span><span class="o">/</span><span class="s s-Atom">site</span><span class="o">/</span><span class="s s-Atom">scripts</span><span class="o">/</span><span class="s s-Atom">ss_get_by_ssh</span><span class="p">.</span><span class="s s-Atom">php</span> <span class="s s-Atom">--host</span> <span class="o">&lt;</span><span class="nv">REMOTE_IP</span><span class="o">&gt;</span> <span class="s s-Atom">--type</span> <span class="s s-Atom">proc_stat</span> <span class="s s-Atom">--items</span> <span class="s s-Atom">gg</span><span class="p">,</span><span class="s s-Atom">gh</span><span class="p">,</span><span class="s s-Atom">gi</span><span class="p">,</span><span class="s s-Atom">gj</span><span class="p">,</span><span class="s s-Atom">gk</span><span class="p">,</span><span class="s s-Atom">gl</span><span class="p">,</span><span class="s s-Atom">gm</span><span class="p">,</span><span class="s s-Atom">gn</span><span class="p">,</span><span class="s s-Atom">go</span><span class="p">,</span> <span class="nn">output</span><span class="p">:</span> <span class="nn">gg</span><span class="p">:</span><span class="mi">50994</span> <span class="nn">gh</span><span class="p">:</span><span class="mi">0</span> <span class="nn">gi</span><span class="p">:</span><span class="mi">76580</span> <span class="nn">gj</span><span class="p">:</span><span class="mi">56353167</span> <span class="nn">gk</span><span class="p">:</span><span class="mi">1617</span> <span class="nn">gl</span><span class="p">:</span><span class="mi">0</span> <span class="nn">gm</span><span class="p">:</span><span class="mi">0</span> <span class="nn">gn</span><span class="p">:</span><span class="mi">2135</span> <span class="nn">go</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span>
+</pre></div></div>
+    <footer>
+<p class="meta">
+  <span class="byline author vcard">
+    Posted by <span class="fn">
+        psgonza
+    </span>
+  </span>
+<time datetime="2012-06-23T09:26:00+02:00" pubdate>Sat 23 June 2012</time>  <span class="categories">
+    <a class='category' href='/category/posts.html'>posts</a>
+  </span>
+</p><div class="sharing">
+</div>    </footer>
+  </article>
+
+</div>
+<aside class="sidebar">
+  <section>
+	  <img src="https://dl.dropboxusercontent.com/u/14814182/blog/roundPic.gif" alt="" width=""/> 
+  </section>
+  <section>
+    <h1>Recent Posts</h1>
+    <ul id="recent_posts">
+      <li class="post">
+          <a href="/2018-05-15-batch-macos-convert-resize-nef-to-jpg.html">NEF batch processing in MacOS (from CLI)</a>
+      </li>
+      <li class="post">
+          <a href="/2018-02-17-psa_minikeepass_and_key_files.html">PSA: MiniKeePass and key files</a>
+      </li>
+      <li class="post">
+          <a href="/2017-12-31-bye-bye-2017_hello-2018.html">Bye bye 2017, hello 2018</a>
+      </li>
+      <li class="post">
+          <a href="/2017-08-25-string-manipulation-exercise-perl-python-awk.html">String manipulation exercise: Perl, Python, Awk</a>
+      </li>
+      <li class="post">
+          <a href="/2017-06-05-issues-running-gpg-in-a-container.html">Issues running gpg in a container</a>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+  <h1>Tags</h1>
+    <a href="/tag/pelican.html">pelican</a>,    <a href="/tag/google.html">google</a>,    <a href="/tag/data-science.html">data science</a>,    <a href="/tag/telegram.html">telegram</a>,    <a href="/tag/coding.html">coding</a>,    <a href="/tag/blogging.html">blogging</a>,    <a href="/tag/books.html">books</a>,    <a href="/tag/linux.html">linux</a>,    <a href="/tag/images.html">images</a>,    <a href="/tag/technology.html">technology</a>,    <a href="/tag/bynario.html">bynario</a>,    <a href="/tag/spotify.html">spotify</a>,    <a href="/tag/git.html">Git</a>,    <a href="/tag/networking.html">networking</a>,    <a href="/tag/ads.html">ads</a>,    <a href="/tag/quickthoughts.html">quickthoughts</a>,    <a href="/tag/spam.html">spam</a>,    <a href="/tag/tv.html">tv</a>,    <a href="/tag/octopress.html">octopress</a>,    <a href="/tag/psgonza.html">psgonza</a>,    <a href="/tag/synology.html">synology</a>,    <a href="/tag/perl.html">perl</a>,    <a href="/tag/nas.html">nas</a>,    <a href="/tag/internet.html">internet</a>,    <a href="/tag/interview.html">interview</a>,    <a href="/tag/2014.html">2014</a>,    <a href="/tag/2017.html">2017</a>,    <a href="/tag/2016.html">2016</a>,    <a href="/tag/iptables.html">iptables</a>,    <a href="/tag/kubernetes.html">kubernetes</a>,    <a href="/tag/python.html">python</a>,    <a href="/tag/ntp.html">ntp</a>,    <a href="/tag/2015.html">2015</a>,    <a href="/tag/keepass.html">keepass</a>,    <a href="/tag/photos.html">photos</a>,    <a href="/tag/ssmtp.html">ssmtp</a>,    <a href="/tag/awk.html">awk</a>,    <a href="/tag/cygwin.html">cygwin</a>,    <a href="/tag/meetups.html">meetups</a>,    <a href="/tag/scripts.html">scripts</a>,    <a href="/tag/ipython.html">ipython</a>,    <a href="/tag/monitoring.html">monitoring</a>,    <a href="/tag/security.html">security</a>,    <a href="/tag/bash.html">bash</a>,    <a href="/tag/rss.html">rss</a>,    <a href="/tag/macos.html">macos</a>,    <a href="/tag/tips.html">tips</a>,    <a href="/tag/geotagging.html">geotagging</a>,    <a href="/tag/ssl.html">ssl</a>,    <a href="/tag/windows.html">windows</a>,    <a href="/tag/blogs.html">blogs</a>,    <a href="/tag/privacy.html">privacy</a>,    <a href="/tag/programming.html">programming</a>,    <a href="/tag/cli.html">cli</a>,    <a href="/tag/podcasts.html">podcasts</a>,    <a href="/tag/ansible.html">ansible</a>,    <a href="/tag/opinion.html">opinion</a>,    <a href="/tag/docker.html">docker</a>,    <a href="/tag/note2self.html">note2self</a>,    <a href="/tag/scripting.html">scripting</a>  </section>
+
+
+
+  <section>
+    <h1>GitHub Repos</h1>
+    <ul id="gh_repos">
+      <p><a href="https://github.com/psgonza">@psgonza</a></p>
+    </ul>
+    <script type="text/javascript">
+      $.domReady(function(){
+          if (!window.jXHR){
+              var jxhr = document.createElement('script');
+              jxhr.type = 'text/javascript';
+              jxhr.src = '/theme/js/jXHR.js';
+              var s = document.getElementsByTagName('script')[0];
+              s.parentNode.insertBefore(jxhr, s);
+          }
+
+          github.showRepos({
+              user: 'psgonza',
+              count: 5,
+              skip_forks: false,
+              target: '#gh_repos'
+          });
+      });
+    </script>
+    <script src="/theme/js/github.js" type="text/javascript"> </script>
+  </section>
+
+    <section>
+        <h1>Social</h1>
+        <ul>
+            <li><a href="/rss.xml" type="application/rss+xml" rel="alternate">RSS</a></li>
+            <li><a href="#" target="_blank">You can add links in your config file</a></li>
+            <li><a href="#" target="_blank">Another social link</a></li>
+        </ul>
+    </section>
+    <section>
+        <h1>Blogroll</h1>
+        <ul>
+            <li><a href="http://getpelican.com/" target="_blank">Pelican</a></li>
+            <li><a href="http://python.org/" target="_blank">Python.org</a></li>
+            <li><a href="http://jinja.pocoo.org/" target="_blank">Jinja2</a></li>
+            <li><a href="#" target="_blank">You can modify those links in your config file</a></li>
+        </ul>
+    </section>
+
+<section>
+   <h1>Tweeter</h1>
+    <p>Follow <a href="http://twitter.com/psgonza">@psgonza</a></p>
+</section>
+</aside>    </div>
+  </div>
+  <footer role="contentinfo"><p>
+    Copyright &copy;  2011&ndash;2018  psgonza &mdash;
+  <span class="credit">Powered by <a href="http://getpelican.com">Pelican</a></span>
+</p></footer>
+  <script src="/theme/js/modernizr-2.0.js"></script>
+  <script src="/theme/js/ender.js"></script>
+  <script src="/theme/js/octopress.js" type="text/javascript"></script>
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-90925-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-90925-1');
+    ga('send', 'pageview');
+</script>
+  <script type="text/javascript">
+    var disqus_shortname = 'bynario';
+    var disqus_identifier = '/2012-06-23-cacti-monitoring-over-ssh.html';
+    var disqus_url = '/2012-06-23-cacti-monitoring-over-ssh.html';
+    var disqus_title = 'Cacti monitoring over SSH';
+    (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = "//" + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+  </script>
+</body>
+</html>

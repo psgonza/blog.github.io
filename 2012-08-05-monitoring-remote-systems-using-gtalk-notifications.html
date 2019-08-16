@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Monitoring remote systems: Using GTalk notifications &mdash; bynario.com</title>
+  <meta name="author" content="psgonza">
+
+  <link href="/rss.xml" type="application/rss+xml" rel="alternate"
+        title="bynario.com RSS Feed" />
+
+
+
+
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    <link href="/favicon.png" rel="icon">
+
+  <link href="/theme/css/main.css" media="screen, projection"
+        rel="stylesheet" type="text/css">
+
+  <link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+</head>
+
+<body>
+  <header role="banner"><hgroup>
+  <h1><a href="/"><img src="https://dl.dropboxusercontent.com/u/14814182/blog/bynario_logo.gif"></a></h1>
+</hgroup></header>
+  <nav role="navigation">
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<ul class="main-navigation">
+    <li><a href="/">Home</a></li>
+    <li><a href="/category/posts.html">Posts</a></li>
+    <li><a href="/rss.xml">RSS</a></li>
+</ul></nav>
+  <div id="main">
+    <div id="content">
+<div>
+  <article class="hentry" role="article">
+<header>
+      <h1 class="entry-title">Monitoring remote systems: Using GTalk notifications</h1>
+    <p class="meta">
+<time datetime="2012-08-05T13:52:00+02:00" pubdate>Sun 05 August 2012</time>    </p>
+</header>
+
+  <div class="entry-content"><p>Since a few weeks ago I am using a <a href="http://raspberrypi.org">Raspberry Pi</a> as bittorrent client instead of my old, big and noisy Pentium III 1Ghz</p>
+<p>{% img center /img/DSC_0321_sm.jpg 'admin' %}</p>
+<p>I am pretty happy with the change (besides a few issues with the USB/Network controller). I managed to get rid of a big PC case, there are no fans spinning anymore (noiseless), and the power consumption is unbeatable, and I only paid around $40. Win-Win situation, isn't it?.</p>
+<p>But this post is not about my rasPi (ok, maybe just a little bit), but about how to received XMMP notification from a remote system. In this case, I was interested in sending a brief report of my VPS status (CPU,MEM,HD, etc) every 12 hours to my Gtalk account, so I can see how it is doing.</p>
+<p>Most of the alternatives are based on sending emails, but I wasn't very keen on setting up a MTA only to send a few reports every X hours, so I decided to use XMMP notifications instead.</p>
+<p>Googling a little bit I found this:</p>
+<div class="highlight"><pre><span></span><span class="nv">apt</span><span class="o">-</span><span class="nv">cache</span> <span class="k">show</span> <span class="nv">sendxmpp</span>
+<span class="nv">Package</span>: <span class="nv">sendxmpp</span>
+<span class="nv">Priority</span>: <span class="nv">optional</span>
+<span class="nv">Section</span>: <span class="nv">net</span>
+<span class="nv">Installed</span><span class="o">-</span><span class="nv">Size</span>: <span class="mi">88</span>
+<span class="nv">Maintainer</span>: <span class="nv">Guus</span> <span class="nv">Sliepen</span> <span class="o">&lt;</span><span class="nv">guus</span>@<span class="nv">debian</span>.<span class="nv">org</span><span class="o">&gt;</span>
+<span class="nv">Architecture</span>: <span class="nv">all</span>
+<span class="nv">Version</span>: <span class="mi">1</span>.<span class="mi">20</span><span class="o">-</span><span class="mi">1</span>
+<span class="nv">Depends</span>: <span class="nv">perl</span>, <span class="nv">libnet</span><span class="o">-</span><span class="nv">xmpp</span><span class="o">-</span><span class="nv">perl</span>
+<span class="nv">Filename</span>: <span class="nv">pool</span><span class="o">/</span><span class="nv">main</span><span class="o">/</span><span class="nv">s</span><span class="o">/</span><span class="nv">sendxmpp</span><span class="o">/</span><span class="nv">sendxmpp_1</span>.<span class="mi">20</span><span class="o">-</span><span class="mi">1</span><span class="nv">_all</span>.<span class="nv">deb</span>
+<span class="nv">Size</span>: <span class="mi">15026</span>
+<span class="nv">MD5sum</span>: <span class="mi">2</span><span class="nv">a3fcdc995442ebd1f7d8a336fc88164</span>
+<span class="nv">SHA1</span>: <span class="mi">90</span><span class="nv">dd5cc21c9b97872dec5a55ce9d55ea7d728d65</span>
+<span class="nv">SHA256</span>: <span class="nv">eb8a2fd09ffc65c04cc54a8a718faf550b5864a3135a9d045d2657cd43ed0449</span>
+<span class="nv">Description</span>: <span class="nv">commandline</span> <span class="nv">XMPP</span> <span class="ss">(</span><span class="nv">jabber</span><span class="ss">)</span> <span class="nv">utility</span>
+ <span class="nv">sendxmpp</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">perl</span> <span class="nv">script</span> <span class="nv">to</span> <span class="k">send</span> <span class="nv">XMPP</span> <span class="ss">(</span><span class="nv">jabber</span><span class="ss">)</span> <span class="nv">messages</span>, <span class="nv">similar</span> <span class="nv">to</span> <span class="nv">what</span>
+ <span class="nv">mail</span><span class="ss">(</span><span class="mi">1</span><span class="ss">)</span> <span class="nv">does</span> <span class="k">for</span> <span class="nv">mail</span>. <span class="nv">XMPP</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">open</span>, <span class="nv">non</span><span class="o">-</span><span class="nv">proprietary</span> <span class="nv">protocol</span> <span class="k">for</span> <span class="nv">instant</span>
+ <span class="nv">messaging</span>. <span class="nv">See</span> <span class="nv">www</span>.<span class="nv">jabber</span>.<span class="nv">org</span> <span class="k">for</span> <span class="nv">more</span> <span class="nv">information</span>.
+<span class="nv">Tag</span>: <span class="nv">implemented</span><span class="o">-</span><span class="nv">in</span>::<span class="nv">perl</span>, <span class="nv">interface</span>::<span class="nv">commandline</span>, <span class="nv">protocol</span>::<span class="nv">jabber</span>, <span class="nv">role</span>::<span class="nv">program</span>, <span class="nv">scope</span>::<span class="nv">utility</span>
+</pre></div>
+
+
+<p>Just what I needed.</p>
+<p>PROs: 
+- Easy to use and integrate in simple scripts.
+- Perl script available in Debian repositories.
+- Lightweight. There are no daemons running. The script is executed whenever is needed.
+- Secure. Using SSL.</p>
+<p>CONS:
+- Only available to GTalk users (obviously).
+- Limited size of the message. (just because of the limited size of the screen of your mobile device)
+- In order to avoid SPAM, the account where you are sending the message from, has to be in the contact list of the receiver.</p>
+<p>As, it was working like a charm in my Raspberry Pi, I decided to do the same in my VPS. Let me describe in a few steps how to configure it:</p>
+<p>Installation? Debian's way.</p>
+<div class="highlight"><pre><span></span> <span class="nv">apt</span><span class="o">-</span><span class="nv">get</span> <span class="nv">install</span> <span class="nv">sendxmpp</span>
+<span class="nv">Reading</span> <span class="nv">package</span> <span class="nv">lists</span>... <span class="nv">Done</span>
+<span class="nv">Building</span> <span class="nv">dependency</span> <span class="nv">tree</span>
+<span class="nv">Reading</span> <span class="nv">state</span> <span class="nv">information</span>... <span class="nv">Done</span>
+<span class="nv">The</span> <span class="nv">following</span> <span class="nv">extra</span> <span class="nv">packages</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">installed</span>:
+  <span class="nv">libauthen</span><span class="o">-</span><span class="nv">sasl</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libdigest</span><span class="o">-</span><span class="nv">sha1</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libio</span><span class="o">-</span><span class="nv">socket</span><span class="o">-</span><span class="nv">ssl</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libnet</span><span class="o">-</span><span class="nv">libidn</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libnet</span><span class="o">-</span><span class="nv">ssleay</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libnet</span><span class="o">-</span><span class="nv">xmpp</span><span class="o">-</span><span class="nv">perl</span>
+  <span class="nv">libxml</span><span class="o">-</span><span class="nv">stream</span><span class="o">-</span><span class="nv">perl</span>
+<span class="nv">Suggested</span> <span class="nv">packages</span>:
+  <span class="nv">libdigest</span><span class="o">-</span><span class="nv">hmac</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libgssapi</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libio</span><span class="o">-</span><span class="nv">socket</span><span class="o">-</span><span class="nv">inet6</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libnet</span><span class="o">-</span><span class="nv">dns</span><span class="o">-</span><span class="nv">perl</span>
+<span class="nv">The</span> <span class="nv">following</span> <span class="nv">NEW</span> <span class="nv">packages</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">installed</span>:
+  <span class="nv">libauthen</span><span class="o">-</span><span class="nv">sasl</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libdigest</span><span class="o">-</span><span class="nv">sha1</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libio</span><span class="o">-</span><span class="nv">socket</span><span class="o">-</span><span class="nv">ssl</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libnet</span><span class="o">-</span><span class="nv">libidn</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libnet</span><span class="o">-</span><span class="nv">ssleay</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">libnet</span><span class="o">-</span><span class="nv">xmpp</span><span class="o">-</span><span class="nv">perl</span>
+  <span class="nv">libxml</span><span class="o">-</span><span class="nv">stream</span><span class="o">-</span><span class="nv">perl</span> <span class="nv">sendxmpp</span>
+<span class="mi">0</span> <span class="nv">upgraded</span>, <span class="mi">8</span> <span class="nv">newly</span> <span class="nv">installed</span>, <span class="mi">0</span> <span class="nv">to</span> <span class="nv">remove</span> <span class="nv">and</span> <span class="mi">0</span> <span class="nv">not</span> <span class="nv">upgraded</span>.
+<span class="nv">Need</span> <span class="nv">to</span> <span class="nv">get</span> <span class="mi">581</span> <span class="nv">kB</span> <span class="nv">of</span> <span class="nv">archives</span>.
+<span class="nv">After</span> <span class="nv">this</span> <span class="nv">operation</span>, <span class="mi">2</span>,<span class="mi">543</span> <span class="nv">kB</span> <span class="nv">of</span> <span class="nv">additional</span> <span class="nv">disk</span> <span class="nv">space</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">used</span>.
+<span class="k">Do</span> <span class="nv">you</span> <span class="nv">want</span> <span class="nv">to</span> <span class="k">continue</span> [<span class="nv">Y</span><span class="o">/</span><span class="nv">n</span>]? <span class="nv">Y</span>
+</pre></div>
+
+
+<p>Pretty easy configuration. Under your home directory, create a .sendxmpprc file</p>
+<div class="highlight"><pre><span></span><span class="err">#</span><span class="w"> </span><span class="n">cat</span><span class="w"> </span><span class="p">.</span><span class="n">sendxmpprc</span><span class="w"></span>
+<span class="o">&lt;</span><span class="n">your_email</span><span class="o">&gt;</span><span class="nv">@gmail</span><span class="p">.</span><span class="n">com</span><span class="w"> </span><span class="o">&lt;</span><span class="n">your_password</span><span class="o">&gt;</span><span class="w"></span>
+</pre></div>
+
+
+<p>Let's test it. First sending a message from the standard input:</p>
+<div class="highlight"><pre><span></span><span class="n">echo</span> <span class="ss">&quot;hello there&quot;</span> <span class="o">|</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">sendxmpp</span>  <span class="o">-</span><span class="n">t</span> <span class="o">-</span><span class="n">u</span> <span class="o">&lt;</span><span class="n">your_email</span><span class="o">&gt;</span> <span class="o">-</span><span class="n">o</span> <span class="n">gmail</span><span class="p">.</span><span class="n">com</span> <span class="o">&lt;</span><span class="n">recipient</span> <span class="n">Google</span> <span class="n">ID</span><span class="o">&gt;</span> 
+</pre></div>
+
+
+<p>Notification received:</p>
+<p>{% img center /img/gtalk1.jpg %}</p>
+<p>And now, sending the text from a file:</p>
+<div class="highlight"><pre><span></span><span class="nv">echo</span> <span class="s2">&quot;</span><span class="s">this is a message send from a text file</span><span class="s2">&quot;</span> <span class="o">&gt;</span> <span class="nv">text</span>.<span class="nv">txt</span>
+<span class="o">/</span><span class="nv">usr</span><span class="o">/</span><span class="nv">bin</span><span class="o">/</span><span class="nv">sendxmpp</span> <span class="o">-</span><span class="nv">t</span> <span class="o">-</span><span class="nv">u</span> <span class="o">&lt;</span><span class="nv">your_email</span><span class="o">&gt;</span> <span class="o">-</span><span class="nv">o</span> <span class="nv">gmail</span>.<span class="nv">com</span> <span class="o">&lt;</span><span class="nv">recipient</span> <span class="nv">Google</span> <span class="nv">ID</span><span class="o">&gt;</span> <span class="o">-</span><span class="nv">m</span> <span class="nv">text</span>.<span class="nv">txt</span>
+</pre></div>
+
+
+<p>Notification received:</p>
+<p>{% img center /img/gtalk2.jpg %}</p>
+<p>Working!</p>
+<p>Integrating it in a simple bash script:</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+
+<span class="nv">REPORT</span><span class="o">=</span><span class="s2">&quot;/tmp/.report&quot;</span>
+
+<span class="o">[</span>  -f <span class="nv">$REPORT</span> <span class="o">]</span> <span class="o">&amp;&amp;</span> rm -f <span class="nv">$REPORT</span>
+<span class="nb">echo</span>  <span class="s2">&quot;VPS report at `date`:&quot;</span> &gt;&gt; <span class="nv">$REPORT</span>
+<span class="nb">echo</span>  <span class="s2">&quot;Machine stats : `uptime`&quot;</span> &gt;&gt; <span class="nv">$REPORT</span>
+<span class="nb">echo</span>  <span class="s2">&quot;Memory stats : `free -m`&quot;</span> &gt;&gt; <span class="nv">$REPORT</span>
+<span class="nb">echo</span>  <span class="s2">&quot;Hard Disk Space: `df -h`&quot;</span> &gt;&gt; <span class="nv">$REPORT</span>
+<span class="nb">echo</span> <span class="s2">&quot;&quot;</span> &gt;&gt; <span class="nv">$REPORT</span>
+
+
+<span class="c1">#Sending the report to GTALK</span>
+/usr/bin/sendxmpp -t -u &lt;your_email&gt; -o gmail.com &lt;recipient Google ID&gt; -m <span class="nv">$REPORT</span> 
+</pre></div>
+</td></tr></table>
+
+<p>And setting up the task in cron:</p>
+<div class="highlight"><pre><span></span><span class="n">crontab</span> <span class="o">-</span><span class="n">e</span>
+<span class="mi">57</span> <span class="mi">17</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="n">sh</span> <span class="o">/</span><span class="n">scripts</span><span class="o">/</span><span class="n">send_report</span><span class="p">.</span><span class="n">sh</span>
+</pre></div>
+
+
+<p>The notification received in my Gtalk client:</p>
+<p>{% img center /img/gtalk3.jpg %}</p>
+<p>This is just an example, but I am pretty sure you could find a lot of applications to this basic notification system</p>
+<p>Enjoy!</p></div>
+    <footer>
+<p class="meta">
+  <span class="byline author vcard">
+    Posted by <span class="fn">
+        psgonza
+    </span>
+  </span>
+<time datetime="2012-08-05T13:52:00+02:00" pubdate>Sun 05 August 2012</time>  <span class="categories">
+    <a class='category' href='/category/posts.html'>posts</a>
+  </span>
+</p><div class="sharing">
+</div>    </footer>
+  </article>
+
+</div>
+<aside class="sidebar">
+  <section>
+	  <img src="https://dl.dropboxusercontent.com/u/14814182/blog/roundPic.gif" alt="" width=""/> 
+  </section>
+  <section>
+    <h1>Recent Posts</h1>
+    <ul id="recent_posts">
+      <li class="post">
+          <a href="/2018-05-15-batch-macos-convert-resize-nef-to-jpg.html">NEF batch processing in MacOS (from CLI)</a>
+      </li>
+      <li class="post">
+          <a href="/2018-02-17-psa_minikeepass_and_key_files.html">PSA: MiniKeePass and key files</a>
+      </li>
+      <li class="post">
+          <a href="/2017-12-31-bye-bye-2017_hello-2018.html">Bye bye 2017, hello 2018</a>
+      </li>
+      <li class="post">
+          <a href="/2017-08-25-string-manipulation-exercise-perl-python-awk.html">String manipulation exercise: Perl, Python, Awk</a>
+      </li>
+      <li class="post">
+          <a href="/2017-06-05-issues-running-gpg-in-a-container.html">Issues running gpg in a container</a>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+  <h1>Tags</h1>
+    <a href="/tag/pelican.html">pelican</a>,    <a href="/tag/google.html">google</a>,    <a href="/tag/data-science.html">data science</a>,    <a href="/tag/telegram.html">telegram</a>,    <a href="/tag/coding.html">coding</a>,    <a href="/tag/blogging.html">blogging</a>,    <a href="/tag/books.html">books</a>,    <a href="/tag/linux.html">linux</a>,    <a href="/tag/images.html">images</a>,    <a href="/tag/technology.html">technology</a>,    <a href="/tag/bynario.html">bynario</a>,    <a href="/tag/spotify.html">spotify</a>,    <a href="/tag/git.html">Git</a>,    <a href="/tag/networking.html">networking</a>,    <a href="/tag/ads.html">ads</a>,    <a href="/tag/quickthoughts.html">quickthoughts</a>,    <a href="/tag/spam.html">spam</a>,    <a href="/tag/tv.html">tv</a>,    <a href="/tag/octopress.html">octopress</a>,    <a href="/tag/psgonza.html">psgonza</a>,    <a href="/tag/synology.html">synology</a>,    <a href="/tag/perl.html">perl</a>,    <a href="/tag/nas.html">nas</a>,    <a href="/tag/internet.html">internet</a>,    <a href="/tag/interview.html">interview</a>,    <a href="/tag/2014.html">2014</a>,    <a href="/tag/2017.html">2017</a>,    <a href="/tag/2016.html">2016</a>,    <a href="/tag/iptables.html">iptables</a>,    <a href="/tag/kubernetes.html">kubernetes</a>,    <a href="/tag/python.html">python</a>,    <a href="/tag/ntp.html">ntp</a>,    <a href="/tag/2015.html">2015</a>,    <a href="/tag/keepass.html">keepass</a>,    <a href="/tag/photos.html">photos</a>,    <a href="/tag/ssmtp.html">ssmtp</a>,    <a href="/tag/awk.html">awk</a>,    <a href="/tag/cygwin.html">cygwin</a>,    <a href="/tag/meetups.html">meetups</a>,    <a href="/tag/scripts.html">scripts</a>,    <a href="/tag/ipython.html">ipython</a>,    <a href="/tag/monitoring.html">monitoring</a>,    <a href="/tag/security.html">security</a>,    <a href="/tag/bash.html">bash</a>,    <a href="/tag/rss.html">rss</a>,    <a href="/tag/macos.html">macos</a>,    <a href="/tag/tips.html">tips</a>,    <a href="/tag/geotagging.html">geotagging</a>,    <a href="/tag/ssl.html">ssl</a>,    <a href="/tag/windows.html">windows</a>,    <a href="/tag/blogs.html">blogs</a>,    <a href="/tag/privacy.html">privacy</a>,    <a href="/tag/programming.html">programming</a>,    <a href="/tag/cli.html">cli</a>,    <a href="/tag/podcasts.html">podcasts</a>,    <a href="/tag/ansible.html">ansible</a>,    <a href="/tag/opinion.html">opinion</a>,    <a href="/tag/docker.html">docker</a>,    <a href="/tag/note2self.html">note2self</a>,    <a href="/tag/scripting.html">scripting</a>  </section>
+
+
+
+  <section>
+    <h1>GitHub Repos</h1>
+    <ul id="gh_repos">
+      <p><a href="https://github.com/psgonza">@psgonza</a></p>
+    </ul>
+    <script type="text/javascript">
+      $.domReady(function(){
+          if (!window.jXHR){
+              var jxhr = document.createElement('script');
+              jxhr.type = 'text/javascript';
+              jxhr.src = '/theme/js/jXHR.js';
+              var s = document.getElementsByTagName('script')[0];
+              s.parentNode.insertBefore(jxhr, s);
+          }
+
+          github.showRepos({
+              user: 'psgonza',
+              count: 5,
+              skip_forks: false,
+              target: '#gh_repos'
+          });
+      });
+    </script>
+    <script src="/theme/js/github.js" type="text/javascript"> </script>
+  </section>
+
+    <section>
+        <h1>Social</h1>
+        <ul>
+            <li><a href="/rss.xml" type="application/rss+xml" rel="alternate">RSS</a></li>
+            <li><a href="#" target="_blank">You can add links in your config file</a></li>
+            <li><a href="#" target="_blank">Another social link</a></li>
+        </ul>
+    </section>
+    <section>
+        <h1>Blogroll</h1>
+        <ul>
+            <li><a href="http://getpelican.com/" target="_blank">Pelican</a></li>
+            <li><a href="http://python.org/" target="_blank">Python.org</a></li>
+            <li><a href="http://jinja.pocoo.org/" target="_blank">Jinja2</a></li>
+            <li><a href="#" target="_blank">You can modify those links in your config file</a></li>
+        </ul>
+    </section>
+
+<section>
+   <h1>Tweeter</h1>
+    <p>Follow <a href="http://twitter.com/psgonza">@psgonza</a></p>
+</section>
+</aside>    </div>
+  </div>
+  <footer role="contentinfo"><p>
+    Copyright &copy;  2011&ndash;2018  psgonza &mdash;
+  <span class="credit">Powered by <a href="http://getpelican.com">Pelican</a></span>
+</p></footer>
+  <script src="/theme/js/modernizr-2.0.js"></script>
+  <script src="/theme/js/ender.js"></script>
+  <script src="/theme/js/octopress.js" type="text/javascript"></script>
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-90925-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-90925-1');
+    ga('send', 'pageview');
+</script>
+  <script type="text/javascript">
+    var disqus_shortname = 'bynario';
+    var disqus_identifier = '/2012-08-05-monitoring-remote-systems-using-gtalk-notifications.html';
+    var disqus_url = '/2012-08-05-monitoring-remote-systems-using-gtalk-notifications.html';
+    var disqus_title = 'Monitoring remote systems: Using GTalk notifications';
+    (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = "//" + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+  </script>
+</body>
+</html>

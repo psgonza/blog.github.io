@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Python port locker/unlocker &mdash; bynario.com</title>
+  <meta name="author" content="psgonza">
+
+  <link href="/rss.xml" type="application/rss+xml" rel="alternate"
+        title="bynario.com RSS Feed" />
+
+
+
+
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    <link href="/favicon.png" rel="icon">
+
+  <link href="/theme/css/main.css" media="screen, projection"
+        rel="stylesheet" type="text/css">
+
+  <link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+</head>
+
+<body>
+  <header role="banner"><hgroup>
+  <h1><a href="/"><img src="https://dl.dropboxusercontent.com/u/14814182/blog/bynario_logo.gif"></a></h1>
+</hgroup></header>
+  <nav role="navigation">
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<ul class="main-navigation">
+    <li><a href="/">Home</a></li>
+    <li><a href="/category/posts.html">Posts</a></li>
+    <li><a href="/rss.xml">RSS</a></li>
+</ul></nav>
+  <div id="main">
+    <div id="content">
+<div>
+  <article class="hentry" role="article">
+<header>
+      <h1 class="entry-title">Python port locker/unlocker</h1>
+    <p class="meta">
+<time datetime="2014-10-18T17:58:30+02:00" pubdate>Sat 18 October 2014</time>    </p>
+</header>
+
+  <div class="entry-content"><p>If you run you own server (VPS, cloud instances, bare metal, no matter what), I guess you check your log files almost on daily basis, and probably you already run any the multiple available tools (the list is pretty long, but in my case I use <a href="http://sourceforge.net/projects/logwatch/">logwatch</a>) that helps you out to keep an eye in what is going on in your machine.</p>
+<p>There is one thing in particular that drives me crazy. As soon as you expose a machine to the internet, people will be constantly trying to get SSH access:</p>
+<p>{% img center /img/logwatch_print.JPG  'logwatch' %}</p>
+<p>Obviously, there are tools that will make your life easier (like <a href="http://www.fail2ban.org/wiki/index.php/Main_Page">fail2ban</a>, totally recommended) and some security tweaks (just Google for "linux server hardening") that you should be doing if you manage your own server, but even with all those things in place, I really don't like people trying to access to my server 24/7... Call me crazy, if you like.</p>
+<p>A simple solution would have been just to change the SSH port to a something different, like 22222, and this might work for you. Unfortunately, I spend most of the time behind a proxy server, and I can only access the most common ports (the same very ones that are scanned on regular basis), so I needed to keep ssh service running in port 22.</p>
+<p>Last year I coded a small bash script (just for myself) that allowed me to open and close SSH port on demand. It is been working fine since then, and I don't get annoyed by the ssh auth errors in logwath anymore. Now I migrated it to Python, and I thought it could be useful for anyone else, so here it is...</p>
+<p>The script is not big deal, it will open/close certain ports that I preconfigured by reading a text file. Nothing new under the sun.</p>
+<p>The only "particularity" of this script is that, instead of creating a service (webservice??) that allowed me to send the desired ssh state to the server (this would add another "attack vector"), I decided the script would pull the data from another location. I decided to use a (public) file in my dropbox folder. </p>
+<p>If you want it to give it a try, these are the steps:</p>
+<p>1 - Create a file in your dropbox folder and get the public link. Let's say that you get something like this: </p>
+<div class="highlight"><pre><span></span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="p">.</span><span class="n">dropbox</span><span class="p">.</span><span class="n">com</span><span class="o">/</span><span class="n">s</span><span class="o">/</span><span class="n">XXXXXXXXXXXXXXXX</span><span class="o">/</span><span class="n">file</span>
+</pre></div>
+
+
+<p>2 - Add to this file any of the options you defined in the script. ie: </p>
+<div class="highlight"><pre><span></span><span class="k">open</span> <span class="n">ssh</span>
+<span class="k">close</span> <span class="n">vpn</span>
+<span class="k">open</span>  <span class="n">httpd</span>
+</pre></div>
+
+
+<p>3 - Upload this script to your server (github link available in the code snippet header):</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1">#===============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#          FILE:  portLocker.py</span>
+<span class="c1">#         USAGE:  python portLocker.py</span>
+<span class="c1">#   DESCRIPTION:  port blocker/unblocker via dropbox file</span>
+<span class="c1">#        AUTHOR:  http://bynario.com</span>
+<span class="c1">#       CREATED:  05/08/2014 17:37:23 CEST</span>
+<span class="c1">#===============================================================================</span>
+<span class="kn">import</span> <span class="nn">time</span><span class="o">,</span><span class="nn">sys</span><span class="o">,</span><span class="nn">os</span><span class="o">,</span><span class="nn">subprocess</span>
+
+<span class="n">dbFile</span><span class="o">=</span><span class="s2">&quot;https://www.dropbox.com/s/XXXXXXXXXXXXXXXX/file&quot;</span>
+<span class="n">logFile</span><span class="o">=</span><span class="s2">&quot;/var/log/locker_log.log&quot;</span>
+<span class="n">htmlFile</span><span class="o">=</span><span class="s2">&quot;/usr/share/nginx/www/sshd.html&quot;</span>
+<span class="n">servicesL</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;ssh&#39;</span><span class="p">:</span><span class="s1">&#39;22&#39;</span><span class="p">,</span><span class="s1">&#39;vpn&#39;</span><span class="p">:</span><span class="s1">&#39;1723&#39;</span><span class="p">,</span><span class="s1">&#39;httpd&#39;</span><span class="p">:</span><span class="s1">&#39;80&#39;</span><span class="p">}</span>
+<span class="n">actionsL</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;open&#39;</span><span class="p">,</span><span class="s1">&#39;close&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">createWWW</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">getTime</span><span class="p">())</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">print2Log</span><span class="p">(</span><span class="n">logFile</span><span class="p">,</span><span class="s2">&quot;Error opening &quot;</span><span class="o">+</span><span class="n">filename</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">print2Log</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">text</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">getTime</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot; - &quot;</span> <span class="o">+</span> <span class="n">text</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">print2Log</span><span class="p">(</span><span class="n">logFile</span><span class="p">,</span><span class="s2">&quot;Error opening &quot;</span><span class="o">+</span><span class="n">filename</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">print2WWW</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">service</span><span class="p">,</span><span class="n">status</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; - Service: &quot;</span> <span class="o">+</span> <span class="n">service</span> <span class="o">+</span> <span class="s2">&quot; - Status: &quot;</span> <span class="o">+</span> <span class="n">status</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">print2Log</span><span class="p">(</span><span class="n">logFile</span><span class="p">,</span><span class="s2">&quot;Error opening &quot;</span><span class="o">+</span><span class="n">filename</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">getTime</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">runCommand</span><span class="p">(</span><span class="n">command</span><span class="p">,</span><span class="n">retVal</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span><span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span><span class="n">shell</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">retVal</span><span class="p">:</span> <span class="k">return</span> <span class="n">output</span>
+        <span class="k">else</span><span class="p">:</span> <span class="k">return</span> <span class="bp">None</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">print2Log</span><span class="p">(</span><span class="n">logFile</span><span class="p">,</span><span class="s2">&quot;Error executing &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">command</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">checkDBFile</span><span class="p">():</span>
+    <span class="n">action</span><span class="o">=</span><span class="s2">&quot;/usr/bin/curl -s -L &quot;</span> <span class="o">+</span> <span class="n">dbFile</span>
+    <span class="n">command</span><span class="o">=</span><span class="n">runCommand</span><span class="p">(</span><span class="n">action</span><span class="p">,</span><span class="n">retVal</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">command</span>
+
+<span class="k">def</span> <span class="nf">runIptables</span><span class="p">(</span><span class="n">service</span><span class="p">,</span><span class="n">action</span><span class="p">):</span>
+    <span class="k">print</span> <span class="n">getTime</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot; Running iptables... Service: &quot;</span> <span class="o">+</span> <span class="n">service</span> <span class="o">+</span> <span class="s2">&quot; Action:&quot;</span> <span class="o">+</span> <span class="n">action</span>
+    <span class="n">check_command</span><span class="o">=</span><span class="s2">&quot;/sbin/iptables -C INPUT -p tcp -m tcp --dport &quot;</span> <span class="o">+</span> <span class="n">servicesL</span><span class="p">[</span><span class="n">service</span><span class="p">]</span> <span class="o">+</span><span class="s2">&quot; -j DROP&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">check_output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">check_command</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span><span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;close&quot;</span><span class="p">:</span> 
+            <span class="n">command</span><span class="o">=</span><span class="s2">&quot;/sbin/iptables -A INPUT -p tcp --dport &quot;</span> <span class="o">+</span> <span class="n">servicesL</span><span class="p">[</span><span class="n">service</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; -j DROP&quot;</span>
+        <span class="k">else</span><span class="p">:</span> 
+            <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;open&quot;</span><span class="p">:</span>
+            <span class="n">command</span><span class="o">=</span><span class="s2">&quot;/sbin/iptables -D INPUT -p tcp --dport &quot;</span> <span class="o">+</span> <span class="n">servicesL</span><span class="p">[</span><span class="n">service</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; -j DROP&quot;</span>
+        <span class="k">else</span><span class="p">:</span> 
+            <span class="k">return</span>
+
+    <span class="n">runCommand</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">createWWW</span><span class="p">(</span><span class="n">htmlFile</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">checkDBFile</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span> <span class="k">continue</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">print2Log</span><span class="p">(</span><span class="n">logFile</span><span class="p">,</span><span class="s2">&quot;Error in dropbox file: wrong format&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">serv</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">servicesL</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">serv</span><span class="p">)</span> <span class="ow">and</span> <span class="n">act</span> <span class="ow">in</span> <span class="n">actionsL</span><span class="p">:</span>
+                <span class="n">runIptables</span><span class="p">(</span><span class="n">serv</span><span class="p">,</span><span class="n">act</span><span class="p">)</span>
+                <span class="n">print2WWW</span><span class="p">(</span><span class="n">htmlFile</span><span class="p">,</span><span class="n">serv</span><span class="p">,</span><span class="n">act</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span>
+                <span class="n">print2Log</span><span class="p">(</span><span class="n">logFile</span><span class="p">,</span><span class="s2">&quot;Service or Action found in file not valid... Skipping: &quot;</span> <span class="o">+</span> <span class="n">act</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span> <span class="o">+</span> <span class="n">serv</span><span class="p">)</span>
+</pre></div>
+</td></tr></table>
+
+<p>4 - Now check these variables in the script:</p>
+<div class="highlight"><pre><span></span><span class="n">dbFile</span><span class="o">=</span><span class="ss">&quot;https://www.dropbox.com/s/XXXXXXXXXXXXXXXX/file&quot;</span>
+<span class="n">logFile</span><span class="o">=</span><span class="ss">&quot;/var/log/locker_log.log&quot;</span>
+<span class="n">htmlFile</span><span class="o">=</span><span class="ss">&quot;/usr/share/nginx/www/sshd.html&quot;</span>
+<span class="n">servicesL</span><span class="o">=</span><span class="err">{</span><span class="s1">&#39;ssh&#39;</span><span class="p">:</span><span class="s1">&#39;22&#39;</span><span class="p">,</span><span class="s1">&#39;vpn&#39;</span><span class="p">:</span><span class="s1">&#39;1723&#39;</span><span class="p">,</span><span class="s1">&#39;httpd&#39;</span><span class="p">:</span><span class="s1">&#39;80&#39;</span><span class="err">}</span>
+</pre></div>
+
+
+<p>Adapt the script to fit your environment:</p>
+<ul>
+<li>Replace <em>dbFile</em> by the URL you got from Dropbox</li>
+<li>Set the path you need for the <em>logFile</em></li>
+<li>The script will write the status of the services to my web server, so I can check the status easily. Set your path in <em>htmlFile</em>.</li>
+<li>Define the list of services you want to manage in <em>servicesL</em>. This has to match with the info you define in the dropbox file.</li>
+</ul>
+<p>5 - Create an entry in crontab with the periodicity you need. In my case, opening/closing ssh port is not critical, so, as I don't want Dropbox people to get angry at me, I set it up to 5 minutes :)</p>
+<div class="highlight"><pre><span></span> <span class="o">*/</span><span class="mi">5</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="o">*</span> <span class="n">python</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="k">to</span><span class="o">/</span><span class="n">portLocker</span><span class="p">.</span><span class="n">py</span> <span class="o">&amp;&gt;&gt;</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">log</span><span class="o">/</span><span class="n">locker_log</span><span class="p">.</span><span class="n">log</span>
+</pre></div>
+
+
+<p>Now all you need to do is modify your dropbox file, and after a few minutes, check if you get the result you expected ;)</p>
+<p>There is one main improvement that could be done, and it is adding some kind of signature to the file in order to ensure nobody is messing with us, but I have pretty good reasons not to do it (at the moment):</p>
+<ul>
+<li>I update the dropbox file from mobile devices every now and then, and adding a signature to the file would make this way too complex.</li>
+<li>This file is stored in my dropbox folder, so <strong>theoretically</strong>, nobody but me is able to modify it.</li>
+<li>The security of the server does not rely on this script. This is not meant to be "<a href="https://en.wikipedia.org/wiki/Security_through_obscurity">security through obscurity</a>".</li>
+</ul>
+<p>If you are after something more professional, I recommend you to check <a href="https://www.elevenpaths.com/technology/latch/index.html">Latch</a>.</p>
+<p>And that's all folks... It is working pretty well for me, and I hope it works for you... </p>
+<p>See you around</p></div>
+    <footer>
+<p class="meta">
+  <span class="byline author vcard">
+    Posted by <span class="fn">
+        psgonza
+    </span>
+  </span>
+<time datetime="2014-10-18T17:58:30+02:00" pubdate>Sat 18 October 2014</time>  <span class="categories">
+    <a class='category' href='/category/posts.html'>Posts</a>
+  </span>
+  <span class="categories">
+    <a class="category" href="/tag/python.html">python</a>,    <a class="category" href="/tag/coding.html">coding</a>,    <a class="category" href="/tag/iptables.html">iptables</a>  </span>
+</p><div class="sharing">
+</div>    </footer>
+  </article>
+
+</div>
+<aside class="sidebar">
+  <section>
+	  <img src="https://dl.dropboxusercontent.com/u/14814182/blog/roundPic.gif" alt="" width=""/> 
+  </section>
+  <section>
+    <h1>Recent Posts</h1>
+    <ul id="recent_posts">
+      <li class="post">
+          <a href="/2018-05-15-batch-macos-convert-resize-nef-to-jpg.html">NEF batch processing in MacOS (from CLI)</a>
+      </li>
+      <li class="post">
+          <a href="/2018-02-17-psa_minikeepass_and_key_files.html">PSA: MiniKeePass and key files</a>
+      </li>
+      <li class="post">
+          <a href="/2017-12-31-bye-bye-2017_hello-2018.html">Bye bye 2017, hello 2018</a>
+      </li>
+      <li class="post">
+          <a href="/2017-08-25-string-manipulation-exercise-perl-python-awk.html">String manipulation exercise: Perl, Python, Awk</a>
+      </li>
+      <li class="post">
+          <a href="/2017-06-05-issues-running-gpg-in-a-container.html">Issues running gpg in a container</a>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+  <h1>Tags</h1>
+    <a href="/tag/pelican.html">pelican</a>,    <a href="/tag/google.html">google</a>,    <a href="/tag/data-science.html">data science</a>,    <a href="/tag/telegram.html">telegram</a>,    <a href="/tag/coding.html">coding</a>,    <a href="/tag/blogging.html">blogging</a>,    <a href="/tag/books.html">books</a>,    <a href="/tag/linux.html">linux</a>,    <a href="/tag/images.html">images</a>,    <a href="/tag/technology.html">technology</a>,    <a href="/tag/bynario.html">bynario</a>,    <a href="/tag/spotify.html">spotify</a>,    <a href="/tag/git.html">Git</a>,    <a href="/tag/networking.html">networking</a>,    <a href="/tag/ads.html">ads</a>,    <a href="/tag/quickthoughts.html">quickthoughts</a>,    <a href="/tag/spam.html">spam</a>,    <a href="/tag/tv.html">tv</a>,    <a href="/tag/octopress.html">octopress</a>,    <a href="/tag/psgonza.html">psgonza</a>,    <a href="/tag/synology.html">synology</a>,    <a href="/tag/perl.html">perl</a>,    <a href="/tag/nas.html">nas</a>,    <a href="/tag/internet.html">internet</a>,    <a href="/tag/interview.html">interview</a>,    <a href="/tag/2014.html">2014</a>,    <a href="/tag/2017.html">2017</a>,    <a href="/tag/2016.html">2016</a>,    <a href="/tag/iptables.html">iptables</a>,    <a href="/tag/kubernetes.html">kubernetes</a>,    <a href="/tag/python.html">python</a>,    <a href="/tag/ntp.html">ntp</a>,    <a href="/tag/2015.html">2015</a>,    <a href="/tag/keepass.html">keepass</a>,    <a href="/tag/photos.html">photos</a>,    <a href="/tag/ssmtp.html">ssmtp</a>,    <a href="/tag/awk.html">awk</a>,    <a href="/tag/cygwin.html">cygwin</a>,    <a href="/tag/meetups.html">meetups</a>,    <a href="/tag/scripts.html">scripts</a>,    <a href="/tag/ipython.html">ipython</a>,    <a href="/tag/monitoring.html">monitoring</a>,    <a href="/tag/security.html">security</a>,    <a href="/tag/bash.html">bash</a>,    <a href="/tag/rss.html">rss</a>,    <a href="/tag/macos.html">macos</a>,    <a href="/tag/tips.html">tips</a>,    <a href="/tag/geotagging.html">geotagging</a>,    <a href="/tag/ssl.html">ssl</a>,    <a href="/tag/windows.html">windows</a>,    <a href="/tag/blogs.html">blogs</a>,    <a href="/tag/privacy.html">privacy</a>,    <a href="/tag/programming.html">programming</a>,    <a href="/tag/cli.html">cli</a>,    <a href="/tag/podcasts.html">podcasts</a>,    <a href="/tag/ansible.html">ansible</a>,    <a href="/tag/opinion.html">opinion</a>,    <a href="/tag/docker.html">docker</a>,    <a href="/tag/note2self.html">note2self</a>,    <a href="/tag/scripting.html">scripting</a>  </section>
+
+
+
+  <section>
+    <h1>GitHub Repos</h1>
+    <ul id="gh_repos">
+      <p><a href="https://github.com/psgonza">@psgonza</a></p>
+    </ul>
+    <script type="text/javascript">
+      $.domReady(function(){
+          if (!window.jXHR){
+              var jxhr = document.createElement('script');
+              jxhr.type = 'text/javascript';
+              jxhr.src = '/theme/js/jXHR.js';
+              var s = document.getElementsByTagName('script')[0];
+              s.parentNode.insertBefore(jxhr, s);
+          }
+
+          github.showRepos({
+              user: 'psgonza',
+              count: 5,
+              skip_forks: false,
+              target: '#gh_repos'
+          });
+      });
+    </script>
+    <script src="/theme/js/github.js" type="text/javascript"> </script>
+  </section>
+
+    <section>
+        <h1>Social</h1>
+        <ul>
+            <li><a href="/rss.xml" type="application/rss+xml" rel="alternate">RSS</a></li>
+            <li><a href="#" target="_blank">You can add links in your config file</a></li>
+            <li><a href="#" target="_blank">Another social link</a></li>
+        </ul>
+    </section>
+    <section>
+        <h1>Blogroll</h1>
+        <ul>
+            <li><a href="http://getpelican.com/" target="_blank">Pelican</a></li>
+            <li><a href="http://python.org/" target="_blank">Python.org</a></li>
+            <li><a href="http://jinja.pocoo.org/" target="_blank">Jinja2</a></li>
+            <li><a href="#" target="_blank">You can modify those links in your config file</a></li>
+        </ul>
+    </section>
+
+<section>
+   <h1>Tweeter</h1>
+    <p>Follow <a href="http://twitter.com/psgonza">@psgonza</a></p>
+</section>
+</aside>    </div>
+  </div>
+  <footer role="contentinfo"><p>
+    Copyright &copy;  2011&ndash;2018  psgonza &mdash;
+  <span class="credit">Powered by <a href="http://getpelican.com">Pelican</a></span>
+</p></footer>
+  <script src="/theme/js/modernizr-2.0.js"></script>
+  <script src="/theme/js/ender.js"></script>
+  <script src="/theme/js/octopress.js" type="text/javascript"></script>
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-90925-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-90925-1');
+    ga('send', 'pageview');
+</script>
+  <script type="text/javascript">
+    var disqus_shortname = 'bynario';
+    var disqus_identifier = '/2014-10-18-python-port-locker-slash-unlocker.html';
+    var disqus_url = '/2014-10-18-python-port-locker-slash-unlocker.html';
+    var disqus_title = 'Python port locker/unlocker';
+    (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = "//" + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+  </script>
+</body>
+</html>

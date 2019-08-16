@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Simple Vigenere cipher in Python (2) &mdash; bynario.com</title>
+  <meta name="author" content="psgonza">
+
+  <link href="/rss.xml" type="application/rss+xml" rel="alternate"
+        title="bynario.com RSS Feed" />
+
+
+
+
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    <link href="/favicon.png" rel="icon">
+
+  <link href="/theme/css/main.css" media="screen, projection"
+        rel="stylesheet" type="text/css">
+
+  <link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic"
+        rel="stylesheet" type="text/css">
+</head>
+
+<body>
+  <header role="banner"><hgroup>
+  <h1><a href="/"><img src="https://dl.dropboxusercontent.com/u/14814182/blog/bynario_logo.gif"></a></h1>
+</hgroup></header>
+  <nav role="navigation">
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+
+<ul class="main-navigation">
+    <li><a href="/">Home</a></li>
+    <li><a href="/category/posts.html">Posts</a></li>
+    <li><a href="/rss.xml">RSS</a></li>
+</ul></nav>
+  <div id="main">
+    <div id="content">
+<div>
+  <article class="hentry" role="article">
+<header>
+      <h1 class="entry-title">Simple Vigenere cipher in Python (2)</h1>
+    <p class="meta">
+<time datetime="2017-03-08T13:13:17+02:00" pubdate>Wed 08 March 2017</time>    </p>
+</header>
+
+  <div class="entry-content"><p>See:
+- <a href="https://bynario.com/2017-03-07-simple-Vigenere-cipher-in-python.html">Part 1/3</a> 
+- <a href="https://bynario.com/2017-03-10-simple-Vigenere-cipher-in-python-(and-3).html">Part 3/3</a></p>
+<p>Just a small update to my previous post about the <a href="https://bynario.com/2017-03-07-simple-Vigenere-cipher-in-python.html">Vigenere cipher</a></p>
+<p>Following the same approach as in the cipher, I modified a few lines in the script to create the "decoder"... I won't paste the code here, because the script is 95% the same, but I have stored it in <a href="https://github.com/psgonza/bynario/blob/master/simple_vinegere_cipher_decoder.py">GITHUB</a>.</p>
+<p>Basically, some variables change:</p>
+<ul>
+<li>coder: <code>input_text="en un lugar de la mancha de cuyo nombre no quiero acordarme"</code></li>
+<li>
+<p>decoder: <code>input_text="AU CG PQNIK HA SI FEJJPT HA JCRS JVUUVA UW JYELZH EYVZWENTM"</code></p>
+</li>
+<li>
+<p>coder: <code>ciphertext = []</code></p>
+</li>
+<li>
+<p>decoder: <code>cleartext = []</code></p>
+</li>
+<li>
+<p>coder: <code>print("-&gt; Output text: {0}".format(''.join(ciphertext)))</code></p>
+</li>
+<li>decoder: <code>print("-&gt; Output text: {0}".format(''.join(cleartext)))</code></li>
+</ul>
+<p>And the logic for the look up changes as well:</p>
+<p>In the coder, we replace the letter in the input_text by the one in the matrix[n] :</p>
+<div class="highlight"><pre><span></span><span class="k">for</span> <span class="nv">x</span>,<span class="nv">y</span> <span class="nv">in</span> <span class="nv">encryption_tuple</span>:
+    <span class="k">if</span> <span class="nv">source</span>.<span class="nv">find</span><span class="ss">(</span><span class="nv">x</span><span class="ss">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>: 
+        <span class="nv">ciphertext</span>.<span class="nv">append</span><span class="ss">(</span><span class="nv">x</span><span class="ss">)</span>
+    <span class="k">else</span>:
+        <span class="nv">ref_row</span> <span class="o">=</span> <span class="nv">matrix</span>[<span class="mi">0</span>].<span class="nv">index</span><span class="ss">(</span><span class="nv">y</span><span class="ss">)</span>
+        <span class="nv">ciphertext</span>.<span class="nv">append</span><span class="ss">(</span><span class="nv">matrix</span>[<span class="nv">ref_row</span>][<span class="nv">source</span>.<span class="nv">index</span><span class="ss">(</span><span class="nv">x</span><span class="ss">)</span>]<span class="ss">)</span>
+</pre></div>
+
+
+<p>In the decoder, we look for the position (lets call it "y") of the letter in matrix[n] and replace it by the letter in the position "y" in the alphabet:</p>
+<div class="highlight"><pre><span></span><span class="k">for</span> <span class="nv">x</span>,<span class="nv">y</span> <span class="nv">in</span> <span class="nv">encryption_tuple</span>:
+    <span class="k">if</span> <span class="nv">source</span>.<span class="nv">find</span><span class="ss">(</span><span class="nv">x</span><span class="ss">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>: 
+        <span class="nv">cleartext</span>.<span class="nv">append</span><span class="ss">(</span><span class="nv">x</span><span class="ss">)</span>
+    <span class="k">else</span>:
+        <span class="nv">ref_row</span> <span class="o">=</span> <span class="nv">matrix</span>[<span class="mi">0</span>].<span class="nv">index</span><span class="ss">(</span><span class="nv">y</span><span class="ss">)</span>
+        <span class="nv">cleartext</span>.<span class="nv">append</span><span class="ss">(</span><span class="nv">source</span>[<span class="nv">matrix</span>[<span class="nv">ref_row</span>].<span class="nv">index</span><span class="ss">(</span><span class="nv">x</span><span class="ss">)</span>]<span class="ss">)</span>
+</pre></div>
+
+
+<p>The result is the expected:   </p>
+<div class="highlight"><pre><span></span><span class="o">-&gt;</span> <span class="k">Key</span><span class="p">:</span> <span class="n">WHITE</span>
+<span class="o">-&gt;</span> <span class="k">Input</span> <span class="nb">text</span><span class="p">:</span> <span class="n">AU</span> <span class="n">CG</span> <span class="n">PQNIK</span> <span class="n">HA</span> <span class="n">SI</span> <span class="n">FEJJPT</span> <span class="n">HA</span> <span class="n">JCRS</span> <span class="n">JVUUVA</span> <span class="n">UW</span> <span class="n">JYELZH</span> <span class="n">EYVZWENTM</span>
+<span class="o">-&gt;</span> <span class="k">Output</span> <span class="nb">text</span><span class="p">:</span> <span class="n">EN</span> <span class="n">UN</span> <span class="n">LUGAR</span> <span class="n">DE</span> <span class="n">LA</span> <span class="n">MANCHA</span> <span class="n">DE</span> <span class="n">CUYO</span> <span class="n">NOMBRE</span> <span class="k">NO</span> <span class="n">QUIERO</span> <span class="n">ACORDARME</span>
+</pre></div>
+
+
+<p>In the next (and last post) about Vigenere, I'll write another simple coder/decoder script but based in the <a href="https://en.wikipedia.org/wiki/Vigen%C3%A8re_cipher#Algebraic_description">mathematical  concept</a></p>
+<p>Laters!</p></div>
+    <footer>
+<p class="meta">
+  <span class="byline author vcard">
+    Posted by <span class="fn">
+        psgonza
+    </span>
+  </span>
+<time datetime="2017-03-08T13:13:17+02:00" pubdate>Wed 08 March 2017</time>  <span class="categories">
+    <a class='category' href='/category/posts.html'>posts</a>
+  </span>
+  <span class="categories">
+    <a class="category" href="/tag/python.html">python</a>,    <a class="category" href="/tag/books.html">books</a>,    <a class="category" href="/tag/security.html">security</a>  </span>
+</p><div class="sharing">
+</div>    </footer>
+  </article>
+
+</div>
+<aside class="sidebar">
+  <section>
+	  <img src="https://dl.dropboxusercontent.com/u/14814182/blog/roundPic.gif" alt="" width=""/> 
+  </section>
+  <section>
+    <h1>Recent Posts</h1>
+    <ul id="recent_posts">
+      <li class="post">
+          <a href="/2018-05-15-batch-macos-convert-resize-nef-to-jpg.html">NEF batch processing in MacOS (from CLI)</a>
+      </li>
+      <li class="post">
+          <a href="/2018-02-17-psa_minikeepass_and_key_files.html">PSA: MiniKeePass and key files</a>
+      </li>
+      <li class="post">
+          <a href="/2017-12-31-bye-bye-2017_hello-2018.html">Bye bye 2017, hello 2018</a>
+      </li>
+      <li class="post">
+          <a href="/2017-08-25-string-manipulation-exercise-perl-python-awk.html">String manipulation exercise: Perl, Python, Awk</a>
+      </li>
+      <li class="post">
+          <a href="/2017-06-05-issues-running-gpg-in-a-container.html">Issues running gpg in a container</a>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+  <h1>Tags</h1>
+    <a href="/tag/pelican.html">pelican</a>,    <a href="/tag/google.html">google</a>,    <a href="/tag/data-science.html">data science</a>,    <a href="/tag/telegram.html">telegram</a>,    <a href="/tag/coding.html">coding</a>,    <a href="/tag/blogging.html">blogging</a>,    <a href="/tag/books.html">books</a>,    <a href="/tag/linux.html">linux</a>,    <a href="/tag/images.html">images</a>,    <a href="/tag/technology.html">technology</a>,    <a href="/tag/bynario.html">bynario</a>,    <a href="/tag/spotify.html">spotify</a>,    <a href="/tag/git.html">Git</a>,    <a href="/tag/networking.html">networking</a>,    <a href="/tag/ads.html">ads</a>,    <a href="/tag/quickthoughts.html">quickthoughts</a>,    <a href="/tag/spam.html">spam</a>,    <a href="/tag/tv.html">tv</a>,    <a href="/tag/octopress.html">octopress</a>,    <a href="/tag/psgonza.html">psgonza</a>,    <a href="/tag/synology.html">synology</a>,    <a href="/tag/perl.html">perl</a>,    <a href="/tag/nas.html">nas</a>,    <a href="/tag/internet.html">internet</a>,    <a href="/tag/interview.html">interview</a>,    <a href="/tag/2014.html">2014</a>,    <a href="/tag/2017.html">2017</a>,    <a href="/tag/2016.html">2016</a>,    <a href="/tag/iptables.html">iptables</a>,    <a href="/tag/kubernetes.html">kubernetes</a>,    <a href="/tag/python.html">python</a>,    <a href="/tag/ntp.html">ntp</a>,    <a href="/tag/2015.html">2015</a>,    <a href="/tag/keepass.html">keepass</a>,    <a href="/tag/photos.html">photos</a>,    <a href="/tag/ssmtp.html">ssmtp</a>,    <a href="/tag/awk.html">awk</a>,    <a href="/tag/cygwin.html">cygwin</a>,    <a href="/tag/meetups.html">meetups</a>,    <a href="/tag/scripts.html">scripts</a>,    <a href="/tag/ipython.html">ipython</a>,    <a href="/tag/monitoring.html">monitoring</a>,    <a href="/tag/security.html">security</a>,    <a href="/tag/bash.html">bash</a>,    <a href="/tag/rss.html">rss</a>,    <a href="/tag/macos.html">macos</a>,    <a href="/tag/tips.html">tips</a>,    <a href="/tag/geotagging.html">geotagging</a>,    <a href="/tag/ssl.html">ssl</a>,    <a href="/tag/windows.html">windows</a>,    <a href="/tag/blogs.html">blogs</a>,    <a href="/tag/privacy.html">privacy</a>,    <a href="/tag/programming.html">programming</a>,    <a href="/tag/cli.html">cli</a>,    <a href="/tag/podcasts.html">podcasts</a>,    <a href="/tag/ansible.html">ansible</a>,    <a href="/tag/opinion.html">opinion</a>,    <a href="/tag/docker.html">docker</a>,    <a href="/tag/note2self.html">note2self</a>,    <a href="/tag/scripting.html">scripting</a>  </section>
+
+
+
+  <section>
+    <h1>GitHub Repos</h1>
+    <ul id="gh_repos">
+      <p><a href="https://github.com/psgonza">@psgonza</a></p>
+    </ul>
+    <script type="text/javascript">
+      $.domReady(function(){
+          if (!window.jXHR){
+              var jxhr = document.createElement('script');
+              jxhr.type = 'text/javascript';
+              jxhr.src = '/theme/js/jXHR.js';
+              var s = document.getElementsByTagName('script')[0];
+              s.parentNode.insertBefore(jxhr, s);
+          }
+
+          github.showRepos({
+              user: 'psgonza',
+              count: 5,
+              skip_forks: false,
+              target: '#gh_repos'
+          });
+      });
+    </script>
+    <script src="/theme/js/github.js" type="text/javascript"> </script>
+  </section>
+
+    <section>
+        <h1>Social</h1>
+        <ul>
+            <li><a href="/rss.xml" type="application/rss+xml" rel="alternate">RSS</a></li>
+            <li><a href="#" target="_blank">You can add links in your config file</a></li>
+            <li><a href="#" target="_blank">Another social link</a></li>
+        </ul>
+    </section>
+    <section>
+        <h1>Blogroll</h1>
+        <ul>
+            <li><a href="http://getpelican.com/" target="_blank">Pelican</a></li>
+            <li><a href="http://python.org/" target="_blank">Python.org</a></li>
+            <li><a href="http://jinja.pocoo.org/" target="_blank">Jinja2</a></li>
+            <li><a href="#" target="_blank">You can modify those links in your config file</a></li>
+        </ul>
+    </section>
+
+<section>
+   <h1>Tweeter</h1>
+    <p>Follow <a href="http://twitter.com/psgonza">@psgonza</a></p>
+</section>
+</aside>    </div>
+  </div>
+  <footer role="contentinfo"><p>
+    Copyright &copy;  2011&ndash;2018  psgonza &mdash;
+  <span class="credit">Powered by <a href="http://getpelican.com">Pelican</a></span>
+</p></footer>
+  <script src="/theme/js/modernizr-2.0.js"></script>
+  <script src="/theme/js/ender.js"></script>
+  <script src="/theme/js/octopress.js" type="text/javascript"></script>
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-90925-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-90925-1');
+    ga('send', 'pageview');
+</script>
+  <script type="text/javascript">
+    var disqus_shortname = 'bynario';
+    var disqus_identifier = '/2017-03-08-simple-Vigenere-cipher-in-python-(2).html';
+    var disqus_url = '/2017-03-08-simple-Vigenere-cipher-in-python-(2).html';
+    var disqus_title = 'Simple Vigenere cipher in Python (2)';
+    (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = "//" + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+  </script>
+</body>
+</html>
